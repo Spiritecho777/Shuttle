@@ -35,6 +35,18 @@ if (WIN32)
         ${CMAKE_BINARY_DIR}/Asset/Icone.ico
         COPYONLY
     )
+
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/Asset/IconeOFF.ico
+        ${CMAKE_BINARY_DIR}/Asset/IconeOFF.ico
+        COPYONLY
+    )
+
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/Asset/IconeON.ico
+        ${CMAKE_BINARY_DIR}/Asset/IconeON.ico
+        COPYONLY
+    )
 endif()
 
 # -------------------------
@@ -90,17 +102,6 @@ qt_add_executable(${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
 )
-
-# -------------------------
-# Ressources Qt
-# -------------------------
-if(WIN32)
-    qt_add_resources(${PROJECT_NAME} "resources"
-        PREFIX "/"
-        FILES
-            Asset/Icone.png
-    )
-endif()
 
 # -------------------------
 # Copie Asset

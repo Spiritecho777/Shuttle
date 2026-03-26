@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("Shuttle");
-    a.setWindowIcon(QIcon("/icons/app_icon.png"));
+    a.setWindowIcon(QIcon("/icons/Asset/Icone.png"));
 
     if (!AppInitializer::init())
         return 0;
