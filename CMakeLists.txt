@@ -113,6 +113,17 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 )
 
 # -------------------------
+# Ressources Qt (Windows + Linux)
+# -------------------------
+qt_add_resources(${PROJECT_NAME} "resources"
+    PREFIX "/icons"
+    FILES
+        Asset/Icone.png
+        Asset/IconeOFF.png
+        Asset/IconeON.png
+)
+
+# -------------------------
 # Ressources Windows (.rc)
 # -------------------------
 if (WIN32)

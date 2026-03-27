@@ -19,10 +19,16 @@ class TrayManager : public QObject
 public:
 	explicit TrayManager(ShuttleWindow* main, QObject* parent = nullptr);
 
+	void refreshTunnelMenus(const QList<QPair<QString, bool>>& tunnels);
+
 public slots:
 	void updateIcon(TunnelState state);
 
 private:
 	QSystemTrayIcon* tray;
 	QMenu* trayMenu;
+	QMenu* menuConnect;
+	QMenu* menuDisconnect;
+
+	ShuttleWindow* mainWindow;
 };

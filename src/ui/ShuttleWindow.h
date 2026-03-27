@@ -7,4 +7,8 @@ class ShuttleWindow : public QWidget
 
 public:
 	explicit ShuttleWindow(QWidget* parent = nullptr);
+
+signals:
+	void requestConnect(const QString& tunnelName);
+	void requestDisconnect(const QString& tunnelName);
 };

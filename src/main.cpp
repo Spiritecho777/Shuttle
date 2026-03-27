@@ -9,7 +9,8 @@ int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("Shuttle");
-    a.setWindowIcon(QIcon("/icons/Asset/Icone.png"));
+    a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/Asset/Icone.png"));
+    a.setQuitOnLastWindowClosed(false);
 
     if (!AppInitializer::init())
         return 0;

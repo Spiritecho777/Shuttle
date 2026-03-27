@@ -6,8 +6,13 @@
 
 TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
 {
-	tray = new QSystemTrayIcon(QIcon("/icons/Asset/IconeOFF.png"), this);
+	tray = new QSystemTrayIcon(QIcon(":/icons/Asset/IconeOFF.png"), this);
 	trayMenu = new QMenu();
+
+    menuConnect = trayMenu->addMenu("Connexion");
+    menuDisconnect = trayMenu->addMenu("Déconnexion");
+    
+    trayMenu->addSeparator();
 
 	QAction* actionShow = trayMenu->addAction("Ouvrir");
 	QAction* actionQuit = trayMenu->addAction("Quitter");
@@ -33,20 +38,54 @@ TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
     tray->show();
 }
 
+void TrayManager::refreshTunnelMenus(const QList<QPair<QString, bool>>& tunnels)
+{
+    menuConnect->clear();
+    menuDisconnect->clear();
+
+    bool anyConnected = false;
+
+    for (const auto& [name, connected] : tunnels)
+    {
+        if (connected)
+        {
+            anyConnected = true;
+            QAction* action = menuDisconnect->addAction(name);
+            connect(action, &QAction::triggered, [this, name]() {
+                emit mainWindow->requestDisconnect(name);
+                });
+        }
+        else
+        {
+            QAction* action = menuConnect->addAction(name);
+            connect(action, &QAction::triggered, [this, name]() {
+                emit mainWindow->requestConnect(name);
+                });
+        }
+    }
+
+    // Désactiver les menus vides
+    menuConnect->setEnabled(!menuConnect->isEmpty());
+    menuDisconnect->setEnabled(!menuDisconnect->isEmpty());
+
+    // Icône globale
+    updateIcon(anyConnected ? TunnelState::Connected : TunnelState::Disconnected);
+}
+
 void TrayManager::updateIcon(TunnelState state)
 {
     switch (state)
     {
     case TunnelState::Disconnected:
-        tray->setIcon(QIcon("/icons/Asset/IconeOFF.png"));
+        tray->setIcon(QIcon(":/icons/Asset/IconeOFF.png"));
         break;
 
     case TunnelState::Connected:
-        tray->setIcon(QIcon("/icons/Asset/IconeON.png"));
+        tray->setIcon(QIcon(":/icons/Asset/IconeON.png"));
         break;
 
     case TunnelState::Error:
-        tray->setIcon(QIcon("/icons/Asset/Icone.png"));
+        tray->setIcon(QIcon(":/icons/Asset/Icone.png"));
         break;
     }
 }
