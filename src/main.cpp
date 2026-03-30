@@ -1,12 +1,16 @@
 #include <QApplication>
 #include <QIcon>
 
+#include <libssh2.h>
+
 #include "core/AppInitializer.h"
 #include "ui/ShuttleWindow.h"
 #include "ui/TrayManager.h"
 
 int main(int argc, char* argv[])
 {
+	libssh2_init(0);
+
     QApplication a(argc, argv);
     a.setApplicationName("Shuttle");
     a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/Asset/Icone.png"));
@@ -16,9 +20,11 @@ int main(int argc, char* argv[])
         return 0;
 
     ShuttleWindow w;
-    TrayManager tray(&w);
+    //TrayManager tray(&w);
 
     w.show();
 
-    return a.exec();
+    int ret = a.exec();
+	libssh2_exit();
+    return ret;
 }

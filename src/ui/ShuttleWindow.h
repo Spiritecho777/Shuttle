@@ -1,7 +1,8 @@
 #pragma once
-#include <QWidget>
+#include <QMainWindow>
+#include <QTabWidget>
 
-class ShuttleWindow : public QWidget 
+class ShuttleWindow : public QMainWindow
 {
 	Q_OBJECT
 
@@ -10,5 +11,9 @@ public:
 
 signals:
 	void requestConnect(const QString& tunnelName);
-	void requestDisconnect(const QString& tunnelName);
+	void requestDisconnect(const QString& tunnelName); //Systray on s'en occupe après
+
+private:
+	QTabWidget* tabs;
+	QDockWidget* profileDock;
 };
