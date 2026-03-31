@@ -3,16 +3,7 @@
 #include <QObject>
 #include <QMap>
 #include "SSHSession.h"
-
-struct SessionProfile {
-    QString name;
-    QString host;
-    int     port = 22;
-    QString username;
-	QString password;
-    QString privateKeyPath;
-    QString passphrase;
-};
+#include "SessionProfile.h"
 
 class SSHSessionManager : public QObject
 {

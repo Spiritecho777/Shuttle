@@ -1,6 +1,13 @@
 #pragma once
+
+#include "../ssh/SessionProfile.h"
+#include "NewSessionDialog.h"
+
 #include <QMainWindow>
 #include <QTabWidget>
+#include <QDockWidget>
+
+class HomeTab;
 
 class ShuttleWindow : public QMainWindow
 {
@@ -9,11 +16,20 @@ class ShuttleWindow : public QMainWindow
 public:
 	explicit ShuttleWindow(QWidget* parent = nullptr);
 
+	void openSession(const SessionProfile& profile);
+
 signals:
 	void requestConnect(const QString& tunnelName);
 	void requestDisconnect(const QString& tunnelName); //Systray on s'en occupe après
 
+private slots:
+	void openNewProfileDialog();
+	void onProfileCreated(const QVariant& profile);
+
 private:
 	QTabWidget* tabs;
 	QDockWidget* profileDock;
+	QDockWidget* sftpDock;
+
+	HomeTab* homeTab;
 };
