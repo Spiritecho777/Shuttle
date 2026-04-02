@@ -4,6 +4,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFileDialog>
+#include <QApplication>
+#include <QStyle>
 
 NewSessionDialog::NewSessionDialog(QWidget* parent)
 	: QDialog(parent)
@@ -20,6 +22,8 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     portSpin->setValue(22);
 
     keyPathEdit = new QLineEdit(this);
+	QPushButton* browseKeyBtn = new QPushButton(this);
+	browseKeyBtn->setIcon(QApplication::style()->standardIcon(QStyle::SP_DirOpenIcon));
     passwordEdit = new QLineEdit(this);
     passwordEdit->setEchoMode(QLineEdit::Password);
     passphraseEdit = new QLineEdit(this);
@@ -28,15 +32,20 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     createBtn = new QPushButton("Créer", this);
     cancelBtn = new QPushButton("Annuler", this);
 
+	connect(browseKeyBtn, &QPushButton::clicked, this, &NewSessionDialog::onBrowseKeyClicked);
     connect(createBtn, &QPushButton::clicked, this, &NewSessionDialog::onCreateClicked);
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
+
+	QHBoxLayout* keyLayout = new QHBoxLayout();
+	keyLayout->addWidget(keyPathEdit);
+	keyLayout->addWidget(browseKeyBtn);
 
     QFormLayout* form = new QFormLayout();
     form->addRow("Nom du profil :", nameEdit);
     form->addRow("Hôte :", hostEdit);
     form->addRow("Utilisateur :", userEdit);
     form->addRow("Port :", portSpin);
-    form->addRow("Clé privée :", keyPathEdit);
+    form->addRow("Clé privée :", keyLayout);
     form->addRow("Mot de passe :", passwordEdit);
     form->addRow("Passphrase :", passphraseEdit);
 
@@ -65,4 +74,13 @@ void NewSessionDialog::onCreateClicked()
 
     emit profileCreated(QVariant::fromValue(profile));
     accept();
+}
+
+void NewSessionDialog::onBrowseKeyClicked()
+{
+    QString filePath = QFileDialog::getOpenFileName(this, "Sélectionner une clé privée", QString(), "Clés privées (*.key *.pem *.ppk);;Tous les fichiers (*)");
+
+    if (!filePath.isEmpty()) {
+        keyPathEdit->setText(filePath);
+    }
 }

@@ -129,11 +129,18 @@ void SSHSession::run()
 		);
 	}
 	else {
-		rc = libssh2_userauth_publickey_fromfile(
+		QByteArray key = QFile::readAll(privateKeyPath);
+		if (key.isEmpty()) {
+			emit connectionFailed("Impossible de lire la clé privée");
+			return;
+		}
+
+		rc = libssh2_userauth_publickey_frommemory(
 			session,
 			username.toUtf8().constData(),
-			nullptr,
-			privateKeyPath.toUtf8().constData(),
+			nullptr, 0,
+			key.constData(), 
+			key.size(),
 			passphrase.isEmpty() ? nullptr : passphrase.toUtf8().constData()
 		);
 	}

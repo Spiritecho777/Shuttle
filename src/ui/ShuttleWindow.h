@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../ssh/SessionProfile.h"
+#include "../ssh/ProfileStore.h"
 #include "NewSessionDialog.h"
 
 #include <QMainWindow>
@@ -8,6 +9,7 @@
 #include <QDockWidget>
 
 class HomeTab;
+class ProfileStore;
 
 class ShuttleWindow : public QMainWindow
 {
@@ -32,4 +34,5 @@ private:
 	QDockWidget* sftpDock;
 
 	HomeTab* homeTab;
+	ProfileStore* profileStore;
 };

@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <QApplication>
 #include <QIcon>
 
@@ -10,6 +11,9 @@
 int main(int argc, char* argv[])
 {
 	libssh2_init(0);
+
+    QCoreApplication::setOrganizationName("Stusoft");
+    QCoreApplication::setApplicationName("Shuttle");
 
     QApplication a(argc, argv);
     a.setApplicationName("Shuttle");

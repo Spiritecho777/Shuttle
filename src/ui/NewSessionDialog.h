@@ -20,6 +20,7 @@ signals:
 
 private slots:
 	void onCreateClicked();
+	void onBrowseKeyClicked();
 
 private:
     QLineEdit* nameEdit;

@@ -18,6 +18,7 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
     setCentralWidget(tabs);
 
     homeTab = new HomeTab();
+	profileStore = new ProfileStore(this);
 	tabs->addTab(homeTab, "Accueil");
 	tabs->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr); // Empêche la fermeture de l'onglet d'accueil
 	tabs->tabBar()->setTabButton(0, QTabBar::LeftSide, nullptr); // Empêche la fermeture de l'onglet d'accueil
@@ -32,7 +33,7 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	resizeDocks({ profileDock }, { 200 }, { Qt::Horizontal });
 
     // --- Barre de menus ---
-    QMenu* sessionMenu = menuBar()->addMenu("Sessions");
+    //QMenu* sessionMenu = menuBar()->addMenu("Sessions");
     //sessionMenu->addAction("Nouvelle session", this, &ShuttleWindow::openSession);
     //sessionMenu->addAction("Fermer la session", this, &ShuttleWindow::closeCurrentSession);
 
@@ -55,5 +56,5 @@ void ShuttleWindow::openNewProfileDialog()
 void ShuttleWindow::onProfileCreated(const QVariant& var)
 {
     SessionProfile profile = var.value<SessionProfile>();
-    openSession(profile);
+	profileStore->addProfile(profile);
 }

@@ -211,21 +211,20 @@ static void secureWipe(QByteArray& arr)
 
 QByteArray CryptoUtils::loadMasterKey()
 {
-	QSettings s("NexusUtils", "Security");
+    QSettings s;
 
-	QByteArray hash = s.value("masterHash").toByteArray();
-	QByteArray salt = s.value("masterSalt").toByteArray();
+    QByteArray hash = s.value("masterHash").toByteArray();
+    QByteArray salt = s.value("masterSalt").toByteArray();
 
     if (hash.isEmpty() || salt.isEmpty())
-		return {};
+        return {};
 
-	return hash + salt;
+    return hash + salt;
 }
 
 void CryptoUtils::saveMasterKey(const QByteArray& hash, const QByteArray& salt)
 {
-    QSettings s("NexusUtils", "Security");
+    QSettings s;
     s.setValue("masterHash", hash);
     s.setValue("masterSalt", salt);
 }
-
