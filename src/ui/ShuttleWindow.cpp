@@ -1,5 +1,6 @@
 #include "ShuttleWindow.h"
 #include "tab/HomeTab.h"
+#include "ProfileListWidget.h"
 
 #include <QDockWidget>
 #include <QMenuBar>
@@ -28,9 +29,12 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
     // --- Dock latéral : profils SSH ---
     profileDock = new QDockWidget("Profils SSH", this);
     profileDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    //profileDock->setWidget(new ProfileListWidget()); // ton widget
+    profileList = new ProfileListWidget(profileStore, this);
+    profileDock->setWidget(profileList);
     addDockWidget(Qt::LeftDockWidgetArea, profileDock);
 	resizeDocks({ profileDock }, { 200 }, { Qt::Horizontal });
+
+	connect(profileList, &ProfileListWidget::profileSelected, this, &ShuttleWindow::openSession);
 
     // --- Barre de menus ---
     //QMenu* sessionMenu = menuBar()->addMenu("Sessions");

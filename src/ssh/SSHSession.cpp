@@ -1,6 +1,7 @@
 #include "SSHSession.h"
 
 #include <QDebug>
+#include <QFile>
 #include <cstring>
 
 #include <libssh2.h>
@@ -116,12 +117,13 @@ void SSHSession::run()
 		return;
 	}
 
-	libssh2_session_set_blocking(session, 0);
+	libssh2_session_set_blocking(session, 1);
 
 	// --- Authentification ---
 	int rc = LIBSSH2_ERROR_AUTHENTICATION_FAILED;
 
 	if (authMethod == AuthMethod::Password) {
+
 		rc = libssh2_userauth_password(
 			session,
 			username.toUtf8().constData(),
@@ -129,19 +131,15 @@ void SSHSession::run()
 		);
 	}
 	else {
-		QByteArray key = QFile::readAll(privateKeyPath);
-		if (key.isEmpty()) {
-			emit connectionFailed("Impossible de lire la clé privée");
-			return;
-		}
+		QByteArray userUtf8 = username.toUtf8();
+		QByteArray passUtf8 = passphrase.toUtf8();
 
-		rc = libssh2_userauth_publickey_frommemory(
+		rc = libssh2_userauth_publickey_fromfile(
 			session,
-			username.toUtf8().constData(),
-			nullptr, 0,
-			key.constData(), 
-			key.size(),
-			passphrase.isEmpty() ? nullptr : passphrase.toUtf8().constData()
+			userUtf8.constData(),
+			privateKeyPath.toUtf8().constData(),   // clé privée
+			nullptr,                               // clé publique → libssh2 la reconstruit
+			passphrase.isEmpty() ? nullptr : passUtf8.constData()
 		);
 	}
 
@@ -151,6 +149,8 @@ void SSHSession::run()
 		emit connectionFailed(QString("Authentification échouée : %1").arg(errmsg));
 		return;
 	}
+
+	libssh2_session_set_blocking(session, 0);
 
 	// --- PTY ---
 	channel = libssh2_channel_open_session(session);

@@ -10,6 +10,7 @@
 
 class HomeTab;
 class ProfileStore;
+class ProfileListWidget;
 
 class ShuttleWindow : public QMainWindow
 {
@@ -35,4 +36,5 @@ private:
 
 	HomeTab* homeTab;
 	ProfileStore* profileStore;
+	ProfileListWidget* profileList;
 };
