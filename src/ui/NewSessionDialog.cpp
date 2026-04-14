@@ -72,7 +72,12 @@ void NewSessionDialog::onCreateClicked()
     profile.password = passwordEdit->text();
     profile.passphrase = passphraseEdit->text();
 
-    emit profileCreated(QVariant::fromValue(profile));
+    if (editMode) {
+		emit profileEdited(profile, editIndex);
+	}
+    else {
+        emit profileCreated(profile);
+    }
     accept();
 }
 
@@ -83,4 +88,21 @@ void NewSessionDialog::onBrowseKeyClicked()
     if (!filePath.isEmpty()) {
         keyPathEdit->setText(filePath);
     }
+}
+
+void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
+{
+	editMode = true;
+    editIndex = index;
+
+    nameEdit->setText(profile.name);
+    hostEdit->setText(profile.host);
+    userEdit->setText(profile.username);
+    portSpin->setValue(profile.port);
+    keyPathEdit->setText(profile.privateKeyPath);
+    passwordEdit->setText(profile.password);
+    passphraseEdit->setText(profile.passphrase);
+
+	setWindowTitle("Modifier le profil");
+    createBtn->setText("Enregistrer");
 }

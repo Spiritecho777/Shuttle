@@ -17,6 +17,7 @@ public:
 
 	void addProfile(const SessionProfile& profile);
 	void removeProfile(int index);
+	void updateProfile(int index, const SessionProfile& profile);
 
 	void load();
 	void save() const;

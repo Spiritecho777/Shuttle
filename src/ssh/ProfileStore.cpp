@@ -21,7 +21,7 @@ void ProfileStore::addProfile(const SessionProfile& profile)
 
 void ProfileStore::removeProfile(int index)
 {
-	if (index < 0 && index >= m_profiles.size())
+	if (index < 0 || index >= m_profiles.size())
 		return;
 
 	m_profiles.removeAt(index);
@@ -89,4 +89,13 @@ void ProfileStore::save() const
 	QFile file(path);
 	if (file.open(QIODevice::WriteOnly))
 		file.write(encrypted);
+}
+
+void ProfileStore::updateProfile(int index, const SessionProfile& profile)
+{
+	if (index < 0 || index >= m_profiles.size())
+		return;
+	m_profiles[index] = profile;
+	save();
+	emit profilesChanged();
 }

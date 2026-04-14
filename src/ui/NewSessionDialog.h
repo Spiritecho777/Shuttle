@@ -14,15 +14,21 @@ class NewSessionDialog : public QDialog
 
 public:
 	explicit NewSessionDialog(QWidget* parent = nullptr);
+
+	void loadProfile(const SessionProfile& profile, int index);
 	
 signals:
-	void profileCreated(const QVariant& profile);
+	void profileCreated(const SessionProfile& profile);
+	void profileEdited(const SessionProfile& profile, int index);
 
 private slots:
 	void onCreateClicked();
 	void onBrowseKeyClicked();
 
 private:
+	bool editMode = false;
+	int editIndex = -1;
+
     QLineEdit* nameEdit;
     QLineEdit* hostEdit;
     QLineEdit* userEdit;

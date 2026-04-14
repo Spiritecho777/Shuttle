@@ -35,6 +35,8 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	resizeDocks({ profileDock }, { 200 }, { Qt::Horizontal });
 
 	connect(profileList, &ProfileListWidget::profileSelected, this, &ShuttleWindow::openSession);
+	connect(profileList, &ProfileListWidget::profileDeletedRequested, this, &ShuttleWindow::deleteSession);
+	connect(profileList, &ProfileListWidget::profileEditRequested, this, &ShuttleWindow::editSession);
 
     // --- Barre de menus ---
     //QMenu* sessionMenu = menuBar()->addMenu("Sessions");
@@ -50,6 +52,25 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
 
 }
 
+void ShuttleWindow::deleteSession(int index)
+{
+	profileStore->removeProfile(index);
+}
+
+void ShuttleWindow::editSession(const SessionProfile& profile, int index)
+{
+	NewSessionDialog* dialog = new NewSessionDialog(this);
+	dialog->loadProfile(profile, index);
+	connect(dialog, &NewSessionDialog::profileEdited, this, &ShuttleWindow::onProfileEdited);
+	dialog->exec();
+}
+
+void ShuttleWindow::onProfileEdited(const SessionProfile& profile, int index)
+{
+    profileStore->updateProfile(index, profile);
+}
+
+
 void ShuttleWindow::openNewProfileDialog()
 {
     NewSessionDialog* dialog = new NewSessionDialog(this);
@@ -57,8 +78,7 @@ void ShuttleWindow::openNewProfileDialog()
     dialog->exec();
 }
 
-void ShuttleWindow::onProfileCreated(const QVariant& var)
+void ShuttleWindow::onProfileCreated(const SessionProfile& profile)
 {
-    SessionProfile profile = var.value<SessionProfile>();
 	profileStore->addProfile(profile);
 }

@@ -3,11 +3,13 @@
 #include "../ssh/SessionProfile.h"
 
 #include <QVBoxLayout>
+#include <QMenu>
 
 ProfileListWidget::ProfileListWidget(ProfileStore* store, QWidget* parent)
 	: QWidget(parent), store(store)
 {
 	list = new QListWidget(this);
+	list->setContextMenuPolicy(Qt::CustomContextMenu);
 	
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->addWidget(list);
@@ -15,7 +17,8 @@ ProfileListWidget::ProfileListWidget(ProfileStore* store, QWidget* parent)
 	
 	connect(store, &ProfileStore::profilesChanged, this, &ProfileListWidget::refreshList);
 	connect(list, &QListWidget::itemClicked, this, &ProfileListWidget::onItemClicked);
-	
+	connect(list, &QListWidget::customContextMenuRequested, this, &ProfileListWidget::showContextMenu);
+
 	refreshList();
 }
 
@@ -40,4 +43,29 @@ void ProfileListWidget::onItemClicked(QListWidgetItem* item)
 			return;
 		}
 	}
+}
+
+void ProfileListWidget::showContextMenu(const QPoint& pos)
+{
+	QListWidgetItem* item = list->itemAt(pos);
+	if (!item) return;
+
+	int row = list->row(item);
+	
+	if (row < 0 || row >= store->profiles().size())
+		return;
+
+	const SessionProfile& selectedProfile = store->profiles().at(row);
+	
+	QMenu contextMenu;
+	contextMenu.addAction("Ouvrir", [this, selectedProfile]() {
+		emit profileSelected(selectedProfile);
+	});
+	contextMenu.addAction("Modifier", [this, selectedProfile, row]() {
+		emit profileEditRequested(selectedProfile, row);
+	});
+	contextMenu.addAction("Supprimer", [this, row]() {
+		emit profileDeletedRequested(row);
+	});
+	contextMenu.exec(list->viewport()->mapToGlobal(pos));
 }

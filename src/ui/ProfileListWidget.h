@@ -15,10 +15,13 @@ public:
 
 signals:
 	void profileSelected(const SessionProfile& profile);
+	void profileDeletedRequested(int index);
+	void profileEditRequested(const SessionProfile& profile, int index);
 
 private slots:
 	void refreshList();
 	void onItemClicked(QListWidgetItem* item);
+	void showContextMenu(const QPoint& pos);
 
 private:
 	ProfileStore* store;

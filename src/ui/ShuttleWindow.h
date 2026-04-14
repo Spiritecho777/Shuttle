@@ -27,7 +27,10 @@ signals:
 
 private slots:
 	void openNewProfileDialog();
-	void onProfileCreated(const QVariant& profile);
+	void onProfileCreated(const SessionProfile& profile);
+	void onProfileEdited(const SessionProfile& profile, int index);
+	void deleteSession(int index);
+	void editSession(const SessionProfile& profile, int index);
 
 private:
 	QTabWidget* tabs;
