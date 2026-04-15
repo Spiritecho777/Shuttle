@@ -86,6 +86,7 @@ file(GLOB_RECURSE SOURCES
     "${CMAKE_SOURCE_DIR}/src/ui/tab/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/ssh/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/sftp/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/terminal/*.cpp"
 )
 
 file(GLOB_RECURSE HEADERS
@@ -94,6 +95,7 @@ file(GLOB_RECURSE HEADERS
     "${CMAKE_SOURCE_DIR}/src/ui/tab/*.h"
     "${CMAKE_SOURCE_DIR}/src/ssh/*.h"
     "${CMAKE_SOURCE_DIR}/src/sftp/*.h"
+    "${CMAKE_SOURCE_DIR}/src/terminal/*.h"
 )
 
 # -------------------------
