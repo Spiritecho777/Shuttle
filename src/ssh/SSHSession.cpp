@@ -192,3 +192,9 @@ void SSHSession::run()
 
 	disconnectSession();
 }
+
+void SSHSession::resizePty(int cols, int rows)
+{
+	if (channel) return;
+	libssh2_channel_request_pty_size(channel, cols, rows);
+}

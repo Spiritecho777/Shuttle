@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include "SSHSession.h"
 
 struct SessionProfile
 {
@@ -11,4 +12,5 @@ struct SessionProfile
     QString privateKeyPath; // Chemin vers la clé privée (optionnel)
     QString password;       // Mot de passe (optionnel, si pas de clé)
 	QString passphrase;     // Passphrase de la clé privée (optionnel)
+	AuthMethod authMethod = AuthMethod::Password; // Méthode d'authentification préférée
 };

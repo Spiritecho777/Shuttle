@@ -38,6 +38,8 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	connect(profileList, &ProfileListWidget::profileDeletedRequested, this, &ShuttleWindow::deleteSession);
 	connect(profileList, &ProfileListWidget::profileEditRequested, this, &ShuttleWindow::editSession);
 
+	connect(tabs, &QTabWidget::tabCloseRequested, this, &ShuttleWindow::closeTab);
+
     // --- Barre de menus ---
     //QMenu* sessionMenu = menuBar()->addMenu("Sessions");
     //sessionMenu->addAction("Nouvelle session", this, &ShuttleWindow::openSession);
@@ -49,7 +51,58 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 
 void ShuttleWindow::openSession(const SessionProfile& profile)
 {
+    // --- Création session SSH ---
+    auto* session = new SSHSession(
+        profile.host,
+        profile.port,
+        profile.username,
+        profile.password,
+        profile.privateKeyPath,
+        profile.passphrase,
+        this
+    );
+    session->setAuthMethod(profile.authMethod);
 
+    // --- Terminal ---
+    auto* terminal = new TerminalWidget(this);
+
+    // --- Onglet ---
+    int idx = tabs->addTab(terminal, profile.name);
+    tabs->setCurrentIndex(idx);
+
+    // --- Titre onglet dynamique (OSC) ---
+    connect(terminal, &TerminalWidget::titleChanged, this, [this, terminal](const QString& title) {
+        int i = tabs->indexOf(terminal);
+        if (i >= 0) tabs->setTabText(i, title);
+        });
+
+    // --- Fermeture onglet ---
+    connect(tabs, &QTabWidget::tabCloseRequested, this, [this, terminal, session](int index) {
+        if (tabs->widget(index) != terminal) return;
+        session->disconnectSession();
+        session->wait(2000);
+        session->deleteLater();
+        tabs->removeTab(index);
+        terminal->deleteLater();
+        });
+
+    // --- Session fermée côté serveur ---
+    connect(terminal, &TerminalWidget::sessionClosed, this, [this, terminal]() {
+        int i = tabs->indexOf(terminal);
+        if (i >= 0) tabs->setTabText(i, tabs->tabText(i) + " [fermé]");
+        });
+
+    // --- Statut ---
+    connect(session, &SSHSession::connected, this, [this, profile]() {
+        statusBar()->showMessage("Connecté : " + profile.name);
+        });
+    connect(session, &SSHSession::connectionFailed, this, [this](const QString& err) {
+        statusBar()->showMessage("Erreur : " + err);
+        });
+
+    // --- Attache et lance ---
+    terminal->attachSession(session);
+    session->start();
 }
 
 void ShuttleWindow::deleteSession(int index)
@@ -81,4 +134,24 @@ void ShuttleWindow::openNewProfileDialog()
 void ShuttleWindow::onProfileCreated(const SessionProfile& profile)
 {
 	profileStore->addProfile(profile);
+}
+
+void ShuttleWindow::closeTab(int index)
+{
+    QWidget* w = tabs->widget(index);
+    if (!w || w == homeTab) return;
+
+    auto* terminal = qobject_cast<TerminalWidget*>(w);
+    if (terminal) {
+        SSHSession* s = terminal->currentSession();
+        terminal->detachSession();
+        if (s) {
+            s->disconnectSession();
+            s->wait(2000);
+            s->deleteLater();
+        }
+    }
+
+    tabs->removeTab(index);
+    w->deleteLater();
 }

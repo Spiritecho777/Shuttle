@@ -29,6 +29,7 @@ public:
 	void writeData(const QByteArray& data);
 	void disconnectSession();
 	void setAuthMethod(AuthMethod m) { authMethod = m; }
+	void resizePty(int cols, int rows);
 
 signals:
 	void connected();

@@ -2,6 +2,8 @@
 
 #include "../ssh/SessionProfile.h"
 #include "../ssh/ProfileStore.h"
+#include "../ssh/SSHSession.h"
+#include "../terminal/TerminalWidget.h"
 #include "NewSessionDialog.h"
 
 #include <QMainWindow>
@@ -31,6 +33,7 @@ private slots:
 	void onProfileEdited(const SessionProfile& profile, int index);
 	void deleteSession(int index);
 	void editSession(const SessionProfile& profile, int index);
+	void closeTab(int index);
 
 private:
 	QTabWidget* tabs;
