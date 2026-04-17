@@ -137,8 +137,8 @@ void SSHSession::run()
 		rc = libssh2_userauth_publickey_fromfile(
 			session,
 			userUtf8.constData(),
+			nullptr,	// clé publique → libssh2 la reconstruit
 			privateKeyPath.toUtf8().constData(),   // clé privée
-			nullptr,                               // clé publique → libssh2 la reconstruit
 			passphrase.isEmpty() ? nullptr : passUtf8.constData()
 		);
 	}
@@ -152,20 +152,42 @@ void SSHSession::run()
 
 	libssh2_session_set_blocking(session, 0);
 
+	// --- Channel ---
+	LIBSSH2_CHANNEL* ch = nullptr;
+	do {
+		ch = libssh2_channel_open_session(session);
+		if (!ch) {
+			int err = libssh2_session_last_errno(session);
+			if (err == LIBSSH2_ERROR_EAGAIN) { msleep(10); continue; }
+			char* errmsg = nullptr;
+			libssh2_session_last_error(session, &errmsg, nullptr, 0);
+			emit connectionFailed(QString("Impossible d'ouvrir un canal SSH : %1").arg(errmsg));
+			return;
+		}
+	} while (!ch);
+	channel = ch;
+
 	// --- PTY ---
-	channel = libssh2_channel_open_session(session);
-	if (!channel) {
-		emit connectionFailed("Impossible d'ouvrir un canal SSH");
+	do {
+		rc = libssh2_channel_request_pty(channel, "xterm-256color");
+		if (rc == LIBSSH2_ERROR_EAGAIN) msleep(10);
+	} while (rc == LIBSSH2_ERROR_EAGAIN);
+	if (rc != 0) {
+		char* errmsg = nullptr;
+		libssh2_session_last_error(session, &errmsg, nullptr, 0);
+		emit connectionFailed(QString("Impossible de demander un PTY : %1").arg(errmsg));
 		return;
 	}
 
-	if (libssh2_channel_request_pty(channel, "xterm")) {
-		emit connectionFailed("Impossible de demander un terminal PTY");
-		return;
-	}
-
-	if (libssh2_channel_shell(channel)) {
-		emit connectionFailed("Impossible de lancer le shell SSH");
+	// --- Shell ---
+	do {
+		rc = libssh2_channel_shell(channel);
+		if (rc == LIBSSH2_ERROR_EAGAIN) msleep(10);
+	} while (rc == LIBSSH2_ERROR_EAGAIN);
+	if (rc != 0) {
+		char* errmsg = nullptr;
+		libssh2_session_last_error(session, &errmsg, nullptr, 0);
+		emit connectionFailed(QString("Impossible de lancer le shell : %1").arg(errmsg));
 		return;
 	}
 
@@ -195,6 +217,6 @@ void SSHSession::run()
 
 void SSHSession::resizePty(int cols, int rows)
 {
-	if (channel) return;
+	if (!channel) return;
 	libssh2_channel_request_pty_size(channel, cols, rows);
 }
