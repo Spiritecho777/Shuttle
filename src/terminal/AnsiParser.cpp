@@ -29,13 +29,29 @@ void AnsiParser::processChar(unsigned char c)
             lineFeed();
         }
         else if (c == '\b') {                 // Backspace
-            if (m_cursorCol > 0) m_cursorCol--;
+            if (m_cursorCol > 0) {
+                m_cursorCol--;
+                m_buffer->cell(m_cursorCol, m_cursorRow).reset(); // Marque la cellule comme dirty pour forcer le repaint
+            }
         }
         else if (c == '\t') {                 // Tab — aligne sur multiple de 8
             int next = ((m_cursorCol / 8) + 1) * 8;
             m_cursorCol = qMin(next, m_buffer->cols() - 1);
         }
         else if (c == 0x07) {                 // BEL — ignoré
+        }
+        else if (c >= 0xC0){
+            //Debut sequence UTF-8
+			m_utf8Accum.clear();
+			m_utf8Accum.append(static_cast<char>(c));
+        }
+		else if (c >= 0x80) {                 // Continuation d'une séquence UTF-8
+            m_utf8Accum.append(static_cast<char>(c));
+			QString s = QString::fromUtf8(m_utf8Accum);
+            if (!s.isEmpty() && s[0] != QChar::ReplacementCharacter) {
+                writeChar(s[0]);
+                m_utf8Accum.clear();
+			}
         }
         else if (c >= 0x20) {                 // Caractère imprimable
             writeChar(QChar(c));
@@ -191,6 +207,8 @@ void AnsiParser::eraseInDisplay(int mode)
         break;
     case 2: // Tout l'écran
         m_buffer->clearAll();
+		m_cursorCol = 0;
+		m_cursorRow = 0;
         break;
     case 3: // Tout + scrollback (xterm extension)
         m_buffer->clearAll();
@@ -344,8 +362,29 @@ void AnsiParser::handleCSI()
 
     case 'h': // SM — set mode (on ignore la plupart, sauf ?25h curseur visible)
     case 'l': // RM — reset mode
-        // ?25h / ?25l — show/hide cursor — géré dans TerminalWidget
+    {   // Détecte ?1049h (alternate screen) et ?1049l (retour écran principal)
+        // et ?1047h / ?47h — variantes
+        QByteArray p = m_csiParams;
+        p.chop(1); // retire sentinel
+        if (!p.isEmpty()) p.chop(1); // retire h ou l
+        if (p == "?1049" || p == "?1047" || p == "?47") {
+            if (finalByte == 'h') {
+                // Entrée alternate screen — sauvegarde curseur + efface
+                m_savedCol = m_cursorCol;
+                m_savedRow = m_cursorRow;
+                m_buffer->clearAll();
+                m_cursorCol = 0;
+                m_cursorRow = 0;
+            }
+            else {
+                // Retour écran principal — restore curseur + efface
+                m_buffer->clearAll();
+                m_cursorCol = m_savedCol;
+                m_cursorRow = m_savedRow;
+            }
+        }
         break;
+    }
 
     case 'm': // SGR — couleurs et attributs
         handleSGR();

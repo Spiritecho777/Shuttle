@@ -83,6 +83,7 @@ private:
     ParserState      m_state = ParserState::Normal;
     QByteArray       m_csiParams;   // accumule les paramètres CSI
     QByteArray       m_oscBuffer;   // accumule le contenu OSC
+	QByteArray       m_utf8Accum;  // accumule les octets d'un caractère UTF-8 incomplet
 
     TerminalBuffer* m_buffer;
 };
