@@ -71,6 +71,8 @@ private:
     bool   m_italic = false;
     bool   m_underline = false;
 
+	char m_csiFinal = 0; // Lettre finale de la séquence CSI en cours (m, H, J, etc.)
+
     // Curseur
     int m_cursorCol = 0;
     int m_cursorRow = 0;

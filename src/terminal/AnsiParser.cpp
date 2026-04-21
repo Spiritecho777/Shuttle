@@ -112,10 +112,11 @@ void AnsiParser::processChar(unsigned char c)
         // -----------------------------------------------------------------
     case ParserState::CSI:
         if (c >= 0x40 && c <= 0x7E) {          // Lettre finale — on traite
-            m_csiParams.append('\0');           // Sentinel pour le parsing
+            m_csiFinal = static_cast<char>(c);           // Sentinel pour le parsing
             handleCSI();
             m_state = ParserState::Normal;
             m_csiParams.clear();
+			m_csiFinal = 0;
         }
         else {
             m_csiParams.append(static_cast<char>(c));
@@ -242,22 +243,19 @@ void AnsiParser::eraseInLine(int mode)
 
 void AnsiParser::handleCSI()
 {
-    if (m_csiParams.isEmpty()) return;
-
-    // La lettre finale est le dernier octet avant le sentinel '\0'
-    // On la récupère depuis le dernier char non-null
+    // m_csiParams contient les paramètres bruts, m_csiFinal la lettre finale
+    char finalByte = m_csiFinal;
     QByteArray raw = m_csiParams;
-    raw.chop(1); // retire le sentinel
 
-    if (raw.isEmpty()) return;
-
-    char finalByte = raw.back();
-    raw.chop(1);
-
-    // Parse les paramètres numériques séparés par ';'
+    // Parse les paramètres numériques
     QList<int> params;
-    if (!raw.isEmpty()) {
-        for (const QByteArray& p : raw.split(';')) {
+    // Ignore le '?' préfixe (séquences privées DEC)
+    QByteArray paramStr = raw;
+    bool isPrivate = (!paramStr.isEmpty() && paramStr[0] == '?');
+    if (isPrivate) paramStr = paramStr.mid(1);
+
+    if (!paramStr.isEmpty()) {
+        for (const QByteArray& p : paramStr.split(';')) {
             bool ok;
             int v = p.trimmed().toInt(&ok);
             params.append(ok ? v : 0);
@@ -267,6 +265,31 @@ void AnsiParser::handleCSI()
     auto param = [&](int i, int def = 0) -> int {
         return (i < params.size()) ? params[i] : def;
         };
+
+    // Séquences privées DEC (?...)
+    if (isPrivate) {
+        if (finalByte == 'h' || finalByte == 'l') {
+            bool enable = (finalByte == 'h');
+            for (int p : params) {
+                if (p == 1049 || p == 1047 || p == 47) {
+                    if (enable) {
+                        m_savedCol = m_cursorCol;
+                        m_savedRow = m_cursorRow;
+                        m_buffer->clearAll();
+                        m_cursorCol = 0;
+                        m_cursorRow = 0;
+                    }
+                    else {
+                        m_buffer->clearAll();
+                        m_cursorCol = m_savedCol;
+                        m_cursorRow = m_savedRow;
+                    }
+                }
+                // ?25h/?25l (show/hide cursor) — ignoré pour l'instant
+            }
+        }
+        return;
+    }
 
     switch (finalByte) {
 
@@ -420,13 +443,9 @@ void AnsiParser::handleCSI()
 
 void AnsiParser::handleSGR()
 {
-    QByteArray raw = m_csiParams;
-    raw.chop(1); // retire sentinel
-    if (!raw.isEmpty()) raw.chop(1); // retire 'm'
-
     QList<int> params;
-    if (!raw.isEmpty()) {
-        for (const QByteArray& p : raw.split(';')) {
+    if (!m_csiParams.isEmpty()) {
+        for (const QByteArray& p : m_csiParams.split(';')) {
             bool ok;
             int v = p.trimmed().toInt(&ok);
             params.append(ok ? v : 0);
