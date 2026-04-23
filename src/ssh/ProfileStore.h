@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../core/CryptoUtils.h"
+#include "AuthMethod.h"
 #include "SessionProfile.h"
 
 #include <QVector>
 #include <QObject>
+#include <QMessageBox>
 
 class ProfileStore : public QObject 
 {
@@ -28,4 +30,6 @@ signals:
 private:
 	QVector<SessionProfile> m_profiles;
 	CryptoUtils crypto;
+
+	void handleCorruptedFile(const QString& path);
 };

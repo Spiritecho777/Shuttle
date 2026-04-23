@@ -4,6 +4,8 @@
 #include <QString>
 #include <QList>
 #include <QDateTime>
+#include <QMutex>
+#include <QWaitCondition>
 
 #include <libssh2.h>
 #include <libssh2_sftp.h>
@@ -12,8 +14,8 @@
 #include <winsock2.h>
 #endif
 
-#include "../ssh/AuthMethod.h"
 #include "../ssh/SessionProfile.h"
+#include "../ssh/AuthMethod.h"
 
 struct SftpEntry {
     QString  name;

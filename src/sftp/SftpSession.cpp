@@ -4,6 +4,8 @@
 #include <QMutexLocker>
 #include <QDebug>
 
+#include <libssh2.h>
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -261,8 +263,8 @@ void SftpSession::doListDir(const QString & path)
     }
 
     QList<SftpEntry> entries;
-    char filename[512];
-    char longentry[512];
+    static char filename[1024];
+    static char longentry[2048];
     LIBSSH2_SFTP_ATTRIBUTES attrs{};
 
     while (libssh2_sftp_readdir_ex(handle, filename, sizeof(filename),
@@ -321,9 +323,9 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
         return;
     }
 
-    char buf[32768];
+    static char buf[32768];
     qint64 done = 0;
-    ssize_t nread;
+    long nread;
 
     while ((nread = libssh2_sftp_read(handle, buf, sizeof(buf))) > 0) {
         localFile.write(buf, nread);
@@ -367,7 +369,7 @@ void SftpSession::doUpload(const QString & localPath, const QString & remotePath
         return;
     }
 
-    char buf[32768];
+    static char buf[32768];
     qint64 done = 0;
     qint64 nread;
 
@@ -375,7 +377,7 @@ void SftpSession::doUpload(const QString & localPath, const QString & remotePath
         char* ptr = buf;
         qint64 remaining = nread;
         while (remaining > 0) {
-            ssize_t nwritten = libssh2_sftp_write(handle, ptr, static_cast<size_t>(remaining));
+            long nwritten = libssh2_sftp_write(handle, ptr, static_cast<size_t>(remaining));
             if (nwritten < 0) {
                 localFile.close();
                 libssh2_sftp_close(handle);
@@ -399,9 +401,9 @@ void SftpSession::doRename(const QString & oldPath, const QString & newPath)
     QByteArray oldUtf8 = oldPath.toUtf8();
     QByteArray newUtf8 = newPath.toUtf8();
 
-    int rc = libssh2_sftp_rename(m_sftp,
-        oldUtf8.constData(), oldUtf8.size(),
-        newUtf8.constData(), newUtf8.size(),
+    int rc = libssh2_sftp_rename_ex(m_sftp,
+        oldUtf8.constData(), static_cast<unsigned int>(oldUtf8.size()),
+        newUtf8.constData(), static_cast<unsigned int>(newUtf8.size()),
         LIBSSH2_SFTP_RENAME_OVERWRITE | LIBSSH2_SFTP_RENAME_ATOMIC
     );
 

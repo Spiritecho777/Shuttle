@@ -37,17 +37,28 @@ void ProfileStore::load()
 		return;
 
 	QByteArray encryptedData = file.readAll();
+	file.close();
+
 	QByteArray decryptedData = crypto.decryptBytes(encryptedData);
 
-	if (decryptedData.isEmpty())
+	if (decryptedData.isEmpty()) {
+		handleCorruptedFile(path);
 		return;
+	}
 
-	QJsonDocument doc = QJsonDocument::fromJson(decryptedData);
+	QJsonParseError parseError;
+	QJsonDocument doc = QJsonDocument::fromJson(decryptedData, &parseError);
+	if (parseError.error != QJsonParseError::NoError || !doc.isArray()) {
+		handleCorruptedFile(path);
+		return;
+	}
+
 	QJsonArray arr = doc.array();
 
 	m_profiles.clear();
-	for (const QJsonValue& val : arr) 
-	{
+	for (const QJsonValue& val : arr) {
+		if (!val.isObject()) continue;
+
 		QJsonObject obj = val.toObject();
 		SessionProfile profile;
 		profile.name = obj["name"].toString();
@@ -57,8 +68,22 @@ void ProfileStore::load()
 		profile.privateKeyPath = obj["privateKeyPath"].toString();
 		profile.password = obj["password"].toString();
 		profile.passphrase = obj["passphrase"].toString();
+		
+		QString method = obj["authMethod"].toString("Password");
+		profile.authMethod = (method == "PublicKey") ? AuthMethod::PublicKey : AuthMethod::Password;
+		
 		m_profiles.append(profile);
 	}
+}
+
+void ProfileStore::handleCorruptedFile(const QString& path)
+{
+	QFile::remove(path);
+	QMessageBox::warning(nullptr,
+		"Profils corrompus",
+		"Le fichier de profils était corrompu ou dans un format obsolète.\n"
+		"Il a été supprimé automatiquement.\n\n"
+		"Vos profils SSH doivent être recréés.");
 }
 
 void ProfileStore::save() const
@@ -76,8 +101,12 @@ void ProfileStore::save() const
 		obj["privateKeyPath"] = profile.privateKeyPath;
 		obj["password"] = profile.password;
 		obj["passphrase"] = profile.passphrase;
+		obj["authMethod"] = (profile.authMethod == AuthMethod::PublicKey)
+			? "publickey" : "password";
 		arr.append(obj);
 	}
+
+
 
 	QJsonDocument doc(arr);
 	QByteArray plain = doc.toJson();

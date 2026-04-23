@@ -4,6 +4,7 @@
 #include "../ssh/ProfileStore.h"
 #include "../ssh/SSHSession.h"
 #include "../terminal/TerminalWidget.h"
+#include "../sftp/SftpWidget.h"
 #include "NewSessionDialog.h"
 
 #include <QMainWindow>
@@ -43,4 +44,5 @@ private:
 	HomeTab* homeTab;
 	ProfileStore* profileStore;
 	ProfileListWidget* profileList;
+	SftpWidget* m_sftpWidget = nullptr;
 };

@@ -34,9 +34,20 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
     addDockWidget(Qt::LeftDockWidgetArea, profileDock);
 	resizeDocks({ profileDock }, { 200 }, { Qt::Horizontal });
 
+	m_sftpWidget = new SftpWidget(this);
+	sftpDock = new QDockWidget("SFTP", this);
+	sftpDock->setWidget(m_sftpWidget);
+	sftpDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+	addDockWidget(Qt::RightDockWidgetArea, sftpDock);
+	sftpDock->hide(); // Caché par défaut, s'affiche à la connexion
+
 	connect(profileList, &ProfileListWidget::profileSelected, this, &ShuttleWindow::openSession);
 	connect(profileList, &ProfileListWidget::profileDeletedRequested, this, &ShuttleWindow::deleteSession);
 	connect(profileList, &ProfileListWidget::profileEditRequested, this, &ShuttleWindow::editSession);
+
+	connect(m_sftpWidget, &SftpWidget::statusMessage, this, [this](const QString& msg) {
+        statusBar()->showMessage(msg);
+		});
 
 	connect(tabs, &QTabWidget::tabCloseRequested, this, &ShuttleWindow::closeTab);
 
@@ -103,6 +114,9 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
     // --- Attache et lance ---
     terminal->attachSession(session);
     session->start();
+
+	sftpDock->show();
+	m_sftpWidget->connectTo(profile);
 }
 
 void ShuttleWindow::deleteSession(int index)
@@ -153,5 +167,11 @@ void ShuttleWindow::closeTab(int index)
     }
 
     tabs->removeTab(index);
+
+    if (tabs->count() <= 2) {
+		sftpDock->hide();
+		m_sftpWidget->disconnectSession();
+    }
+
     w->deleteLater();
 }

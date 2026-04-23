@@ -5,16 +5,13 @@
 #include <QString>
 #include <atomic>
 
+#include "AuthMethod.h"
+
 #include <libssh2.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
-
-enum class AuthMethod {
-	Password,
-	PublicKey
-};
 
 class SSHSession : public QThread
 {
