@@ -1,6 +1,7 @@
 #include "ShuttleWindow.h"
 #include "tab/HomeTab.h"
 #include "ProfileListWidget.h"
+#include "../ssh/SessionProfile.h"
 
 #include <QDockWidget>
 #include <QMenuBar>
@@ -32,13 +33,14 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
     profileList = new ProfileListWidget(profileStore, this);
     profileDock->setWidget(profileList);
     addDockWidget(Qt::LeftDockWidgetArea, profileDock);
-	resizeDocks({ profileDock }, { 200 }, { Qt::Horizontal });
+	resizeDocks({ profileDock }, { 150 }, { Qt::Horizontal });
 
 	m_sftpWidget = new SftpWidget(this);
 	sftpDock = new QDockWidget("SFTP", this);
 	sftpDock->setWidget(m_sftpWidget);
 	sftpDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	addDockWidget(Qt::RightDockWidgetArea, sftpDock);
+    resizeDocks({ sftpDock }, { 300 }, { Qt::Horizontal });
 	sftpDock->hide(); // Caché par défaut, s'affiche à la connexion
 
 	connect(profileList, &ProfileListWidget::profileSelected, this, &ShuttleWindow::openSession);
@@ -50,6 +52,23 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 		});
 
 	connect(tabs, &QTabWidget::tabCloseRequested, this, &ShuttleWindow::closeTab);
+    connect(tabs, &QTabWidget::currentChanged, this, [this](int index) {
+        // Ignore si on est en train de construire un onglet
+        QWidget* w = tabs->widget(index);
+        if (!w || w == homeTab) return;
+
+        auto* terminal = qobject_cast<TerminalWidget*>(w);
+        if (!terminal) return;
+
+        const SessionProfile& p = terminal->profile();
+        if (p.host.isEmpty() || p.username.isEmpty()) return;  // ← ajoute username
+
+        if (m_sftpWidget->isConnected())
+            m_sftpWidget->disconnectSession();
+
+        m_sftpWidget->connectTo(p);
+        sftpDock->show();
+    });
 
     // --- Barre de menus ---
     //QMenu* sessionMenu = menuBar()->addMenu("Sessions");
@@ -76,10 +95,6 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
 
     // --- Terminal ---
     auto* terminal = new TerminalWidget(this);
-
-    // --- Onglet ---
-    int idx = tabs->addTab(terminal, profile.name);
-    tabs->setCurrentIndex(idx);
 
     // --- Titre onglet dynamique (OSC) ---
     connect(terminal, &TerminalWidget::titleChanged, this, [this, terminal](const QString& title) {
@@ -113,7 +128,12 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
 
     // --- Attache et lance ---
     terminal->attachSession(session);
+	terminal->setProfile(profile); // pour SFTP
     session->start();
+
+    // --- Onglet ---
+    int idx = tabs->addTab(terminal, profile.name);
+    tabs->setCurrentIndex(idx);
 
 	sftpDock->show();
 	m_sftpWidget->connectTo(profile);

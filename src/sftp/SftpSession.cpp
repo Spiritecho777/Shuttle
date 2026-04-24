@@ -226,6 +226,18 @@ bool SftpSession::initSftp()
         emit connectionFailed(QString("SFTP : impossible d'initialiser SFTP : %1").arg(errmsg));
         return false;
     }
+
+    char homeBuf[512];
+    memset(homeBuf, 0, sizeof(homeBuf));  // ← zero out complet
+
+    int rc = libssh2_sftp_realpath(m_sftp, ".", homeBuf, sizeof(homeBuf) - 1);
+    if (rc > 0 && rc < static_cast<int>(sizeof(homeBuf))) {
+        homeBuf[rc] = '\0';  // force null terminator à la bonne position
+        QString home = QString::fromUtf8(homeBuf, rc);  // passe la longueur explicitement
+        if (!home.isEmpty())
+            emit homeResolved(home);
+    }
+
     return true;
 }
 
@@ -263,14 +275,13 @@ void SftpSession::doListDir(const QString & path)
     }
 
     QList<SftpEntry> entries;
-    static char filename[1024];
-    static char longentry[2048];
+    std::vector<char> filename(4096, 0);
+    std::vector<char> longentry(4096, 0);
     LIBSSH2_SFTP_ATTRIBUTES attrs{};
 
-    while (libssh2_sftp_readdir_ex(handle, filename, sizeof(filename),
-        longentry, sizeof(longentry), &attrs) > 0)
+    while (libssh2_sftp_readdir_ex(handle, filename.data(), filename.size(), longentry.data(), longentry.size(), &attrs) > 0)
     {
-        QString name = QString::fromUtf8(filename);
+        QString name = QString::fromUtf8(filename.data());
         if (name == "." || name == "..") continue;
 
         SftpEntry entry;
@@ -323,12 +334,12 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
         return;
     }
 
-    static char buf[32768];
+    std::vector<char> buf(32768, 0);
     qint64 done = 0;
     long nread;
 
-    while ((nread = libssh2_sftp_read(handle, buf, sizeof(buf))) > 0) {
-        localFile.write(buf, nread);
+    while ((nread = libssh2_sftp_read(handle, buf.data(), buf.size())) > 0) {
+        localFile.write(buf.data(), nread);
         done += nread;
         if (total > 0)
             emit downloadProgress(remotePath, done, total);
@@ -345,7 +356,7 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
     emit downloadFinished(remotePath);
 }
 
-void SftpSession::doUpload(const QString & localPath, const QString & remotePath)
+void SftpSession::doUpload(const QString& localPath, const QString& remotePath)
 {
     QFile localFile(localPath);
     if (!localFile.open(QIODevice::ReadOnly)) {
@@ -369,12 +380,12 @@ void SftpSession::doUpload(const QString & localPath, const QString & remotePath
         return;
     }
 
-    static char buf[32768];
+    std::vector<char> buf(32768, 0);
     qint64 done = 0;
     qint64 nread;
 
-    while ((nread = localFile.read(buf, sizeof(buf))) > 0) {
-        char* ptr = buf;
+    while ((nread = localFile.read(buf.data(), static_cast<qint64>(buf.size()))) > 0) {
+        char* ptr = buf.data();
         qint64 remaining = nread;
         while (remaining > 0) {
             long nwritten = libssh2_sftp_write(handle, ptr, static_cast<size_t>(remaining));

@@ -55,7 +55,7 @@ void ProfileListWidget::showContextMenu(const QPoint& pos)
 	if (row < 0 || row >= store->profiles().size())
 		return;
 
-	const SessionProfile& selectedProfile = store->profiles().at(row);
+	const SessionProfile selectedProfile = store->profiles().at(row);
 	
 	QMenu contextMenu;
 	contextMenu.addAction("Ouvrir", [this, selectedProfile]() {

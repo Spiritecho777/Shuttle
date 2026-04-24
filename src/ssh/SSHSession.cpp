@@ -27,18 +27,23 @@ SSHSession::~SSHSession()
 
 void SSHSession::disconnectSession()
 {
+	if (!running.load() && !session && !channel)
+		return;
+
 	running.store(false, std::memory_order_relaxed);
 
 	if(channel) {
-		libssh2_channel_close(channel);
-		libssh2_channel_free(channel);
+		LIBSSH2_CHANNEL* ch = channel;
 		channel = nullptr;
+		libssh2_channel_close(ch);
+		libssh2_channel_free(ch);
 	}
 
 	if (session) {
-		libssh2_session_disconnect(session, "Normal Shutdown");
-		libssh2_session_free(session);
+		LIBSSH2_SESSION* s = session;
 		session = nullptr;
+		libssh2_session_disconnect(s, "Normal Shutdown");
+		libssh2_session_free(s);
 	}
 
 #ifdef _WIN32

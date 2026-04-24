@@ -1,4 +1,5 @@
 #include "NewSessionDialog.h"
+#include "../ssh/AuthMethod.h"
 
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -71,6 +72,7 @@ void NewSessionDialog::onCreateClicked()
     profile.privateKeyPath = keyPathEdit->text();
     profile.password = passwordEdit->text();
     profile.passphrase = passphraseEdit->text();
+	profile.authMethod = keyPathEdit->text().isEmpty() ? AuthMethod::Password : AuthMethod::PublicKey;
 
     if (editMode) {
 		emit profileEdited(profile, editIndex);

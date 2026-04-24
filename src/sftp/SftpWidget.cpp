@@ -137,6 +137,7 @@ void SftpWidget::connectTo(const SessionProfile& profile)
     connect(m_session, &SftpSession::uploadProgress, this, &SftpWidget::onUploadProgress);
     connect(m_session, &SftpSession::downloadFinished, this, &SftpWidget::onDownloadFinished);
     connect(m_session, &SftpSession::uploadFinished, this, &SftpWidget::onUploadFinished);
+	connect(m_session, &SftpSession::homeResolved, this, &SftpWidget::navigateTo);
 
     m_session->start();
 }

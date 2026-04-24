@@ -327,7 +327,7 @@ void TerminalWidget::wheelEvent(QWheelEvent* event)
     int lines = delta / 40; // ~3 lignes par cran
 
     m_scrollOffset = qBound(0,
-        m_scrollOffset - lines,
+        m_scrollOffset + lines,
         m_buffer->scrollbackSize());
     update();
 }
@@ -336,4 +336,13 @@ void TerminalWidget::setScrollOffset(int offset)
 {
     m_scrollOffset = qBound(0, offset, m_buffer->scrollbackSize());
     update();
+}
+
+// -----------------------------------------------------------------
+// SFTP
+// -----------------------------------------------------------------
+
+void TerminalWidget::setProfile(const SessionProfile& p)
+{
+    m_profile = p;
 }

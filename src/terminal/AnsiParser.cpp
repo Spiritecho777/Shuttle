@@ -150,13 +150,17 @@ void AnsiParser::writeChar(QChar ch)
     }
 
     TerminalCell& c = m_buffer->cell(m_cursorCol, m_cursorRow);
-    c.ch = ch;
-    c.fg = m_bold ? m_fg.lighter(130) : m_fg;
-    c.bg = m_bg;
-    c.bold = m_bold;
-    c.italic = m_italic;
-    c.underline = m_underline;
-    c.dirty = true;
+
+	QColor newFg = m_bold ? m_fg.lighter(130) : m_fg;
+    if (c.ch != ch || c.fg != newFg || c.bg != m_bg || c.bold != m_bold || c.italic != m_italic || c.underline != m_underline) {
+        c.ch = ch;
+        c.fg = newFg;
+        c.bg = m_bg;
+        c.bold = m_bold;
+        c.italic = m_italic;
+        c.underline = m_underline;
+        c.dirty = true;
+    }
 
     m_cursorCol++;
 }

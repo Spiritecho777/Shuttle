@@ -57,6 +57,7 @@ signals:
     void uploadFinished(const QString& path);
     void operationError(const QString& message);
     void operationSuccess(const QString& message);
+	void homeResolved(const QString& path);
 
 protected:
     void run() override;

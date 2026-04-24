@@ -10,8 +10,9 @@
 #include "TerminalBuffer.h"
 #include "AnsiParser.h"
 #include "../ssh/SSHSession.h"
+#include "../ssh/SessionProfile.h"
 
-class SSHSession;
+//class SSHSession;
 
 class TerminalWidget : public QWidget
 {
@@ -32,6 +33,10 @@ public:
     // Fait défiler le scrollback
     void setScrollOffset(int offset);
     SSHSession* currentSession() const { return m_session; }
+
+    // SFTP
+    void setProfile(const SessionProfile& p);
+	const SessionProfile& profile() const { return m_profile; }
 
 signals:
     void titleChanged(const QString& title);
@@ -79,4 +84,7 @@ private:
 
     // Scroll
     int m_scrollOffset = 0;   // 0 = bas (position normale), >0 = dans le scrollback
+
+    //SFTP
+	SessionProfile m_profile;
 };
