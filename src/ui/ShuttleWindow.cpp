@@ -81,6 +81,8 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 
 void ShuttleWindow::openSession(const SessionProfile& profile)
 {
+	disconnect(tabs, &QTabWidget::currentChanged, nullptr, nullptr); // Évite de déclencher le slot lors de l'ajout d'un nouvel onglet
+
     // --- Création session SSH ---
     auto* session = new SSHSession(
         profile.host,
@@ -102,21 +104,18 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
         if (i >= 0) tabs->setTabText(i, title);
         });
 
-    // --- Fermeture onglet ---
-    connect(tabs, &QTabWidget::tabCloseRequested, this, [this, terminal, session](int index) {
-        if (tabs->widget(index) != terminal) return;
-        session->disconnectSession();
-        session->wait(2000);
-        session->deleteLater();
-        tabs->removeTab(index);
-        terminal->deleteLater();
-        });
-
     // --- Session fermée côté serveur ---
     connect(terminal, &TerminalWidget::sessionClosed, this, [this, terminal]() {
         int i = tabs->indexOf(terminal);
         if (i >= 0) tabs->setTabText(i, tabs->tabText(i) + " [fermé]");
-        });
+
+		//Déconnecte le SFTP si c'était la session active
+        if (m_sftpWidget->isConnected()) {
+            const SessionProfile& p = terminal->profile();
+            if (m_sftpWidget->isConnected())
+                m_sftpWidget->disconnectSession();
+        }
+    });
 
     // --- Statut ---
     connect(session, &SSHSession::connected, this, [this, profile]() {
@@ -134,6 +133,20 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
     // --- Onglet ---
     int idx = tabs->addTab(terminal, profile.name);
     tabs->setCurrentIndex(idx);
+
+    // Reconnecte après
+    connect(tabs, &QTabWidget::currentChanged, this, [this](int index) {
+        QWidget* w = tabs->widget(index);
+        if (!w || w == homeTab) return;
+        auto* terminal = qobject_cast<TerminalWidget*>(w);
+        if (!terminal) return;
+        const SessionProfile& p = terminal->profile();
+        if (p.host.isEmpty() || p.username.isEmpty()) return;
+        if (m_sftpWidget->isConnected())
+            m_sftpWidget->disconnectSession();
+        m_sftpWidget->connectTo(p);
+        sftpDock->show();
+        });
 
 	sftpDock->show();
 	m_sftpWidget->connectTo(profile);
@@ -188,7 +201,7 @@ void ShuttleWindow::closeTab(int index)
 
     tabs->removeTab(index);
 
-    if (tabs->count() <= 2) {
+    if (tabs->count() <= 1) {
 		sftpDock->hide();
 		m_sftpWidget->disconnectSession();
     }

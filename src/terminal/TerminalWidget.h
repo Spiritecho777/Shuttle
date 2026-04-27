@@ -50,6 +50,10 @@ protected:
     void focusOutEvent(QFocusEvent* event)  override;
     void wheelEvent(QWheelEvent* event)     override;
 
+	void mousePressEvent(QMouseEvent* event)    override;
+	void mouseReleaseEvent(QMouseEvent* event)  override;
+	void mouseMoveEvent(QMouseEvent* event)     override;
+
 private slots:
     void onDataReceived(const QByteArray& data);
     void onSessionDisconnected();
@@ -59,7 +63,13 @@ private:
     void recalcGrid();
     void sendToSession(const QByteArray& data);
     void paintCell(QPainter& painter, int col, int row, int scrollOffset);
+    
+    void renderToBuffer();
+	void renderCell(QPainter& painter, int col, int row);
+
     QByteArray keyEventToSequence(QKeyEvent* event);
+
+	QImage m_backBuffer;   // pour double-buffering du rendu
 
     // Layout
     int m_cols = 80;
@@ -87,4 +97,13 @@ private:
 
     //SFTP
 	SessionProfile m_profile;
+
+	// Sélection de texte
+    QPoint m_selStart = { -1, -1 };
+    QPoint m_selEnd = { -1, -1 };
+	bool m_selecting = false;
+
+	QPoint pixelToCell(const QPoint& px) const;
+	QString selectedText() const;
+	void clearSelection();
 };

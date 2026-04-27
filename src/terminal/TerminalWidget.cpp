@@ -7,30 +7,26 @@
 #include <QFocusEvent>
 #include <QResizeEvent>
 #include <QFontDatabase>
+#include <QApplication>
+#include <QClipboard>
+#include <QMouseEvent>
 
 TerminalWidget::TerminalWidget(QWidget* parent)
     : QWidget(parent)
 {
     // Police monospace — on cherche dans l'ordre
-    const QStringList candidates = {
-        "Cascadia Code", "JetBrains Mono", "Consolas",
-        "DejaVu Sans Mono", "Liberation Mono", "Courier New"
-    };
-
-    m_font = QFont("Courier New", 10); // fallback
-    for (const QString& name : candidates) {
-        if (QFontDatabase::families().contains(name)) {
-            m_font = QFont(name, 10);
-            break;
-        }
-    }
+    m_font = QFont("Courier New", 10);
     m_font.setFixedPitch(true);
     m_font.setStyleHint(QFont::Monospace);
 
-    // Calcul dimensions cellule
+    m_font.resolve(m_font);
+
     QFontMetrics fm(m_font);
-    m_cellW = fm.horizontalAdvance('W'); // largeur caractère le plus large
+    m_cellW = fm.horizontalAdvance(QLatin1Char('W'));
     m_cellH = fm.height();
+
+    if (m_cellW <= 0) m_cellW = 8;
+    if (m_cellH <= 0) m_cellH = 16;
 
     // Buffer initial 80x24
     m_buffer = new TerminalBuffer(m_cols, m_rows);
@@ -95,6 +91,7 @@ void TerminalWidget::detachSession()
 
 void TerminalWidget::onDataReceived(const QByteArray& data)
 {
+    qDebug() << "RX:" << data.toHex(' ');
     m_parser->feed(data);
 }
 
@@ -143,7 +140,7 @@ void TerminalWidget::recalcGrid()
 // Rendu
 // -----------------------------------------------------------------
 
-void TerminalWidget::paintEvent(QPaintEvent* /*event*/)
+/*void TerminalWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
     painter.setFont(m_font);
@@ -185,6 +182,19 @@ void TerminalWidget::paintEvent(QPaintEvent* /*event*/)
             // Fond
             painter.fillRect(x, y, m_cellW, m_cellH, cell.bg);
 
+			// Sélection
+			QPoint normStart = m_selStart, normEnd = m_selEnd;
+			if (normStart.y() > normEnd.y() || (normStart.y() == normEnd.y() && normStart.x() > normEnd.x()))
+				std::swap(normStart, normEnd);
+
+			bool inSelection = (m_selStart.x() >= 0) &&
+				(row > normStart.y() || (row == normStart.y() && col >= normStart.x())) &&
+				(row < normEnd.y() || (row == normEnd.y() && col <= normEnd.x()));
+
+            if (inSelection) {
+                painter.fillRect(x, y, m_cellW, m_cellH, QColor(80,130,200,180));
+			}
+
             // Curseur
             bool isCursor = (m_scrollOffset == 0)
                 && (col == m_parser->cursorCol())
@@ -209,6 +219,94 @@ void TerminalWidget::paintEvent(QPaintEvent* /*event*/)
             }
         }
     }
+}*/
+void TerminalWidget::paintEvent(QPaintEvent*)
+{
+    // Recrée le backbuffer si la taille a changé
+    if (m_backBuffer.size() != size())
+        m_backBuffer = QImage(size(), QImage::Format_RGB32);
+
+    QPainter p(&m_backBuffer);
+    p.setFont(m_font);
+
+    QFontMetrics fm(m_font);
+    int baseline = fm.ascent();
+
+    int curCol = m_parser->cursorCol();
+    int curRow = m_parser->cursorRow();
+
+    for (int row = 0; row < m_rows; ++row) {
+        for (int col = 0; col < m_cols; ++col) {
+
+            const TerminalCell* cellPtr = nullptr;
+
+            if (m_scrollOffset > 0) {
+                int sbSize = m_buffer->scrollbackSize();
+                int sbRow = sbSize - m_scrollOffset + row;
+                if (sbRow >= 0 && sbRow < sbSize) {
+                    const auto& line = m_buffer->scrollback()[sbRow];
+                    if (col < line.size())
+                        cellPtr = &line[col];
+                }
+                else {
+                    int bufRow = row - (m_scrollOffset - sbSize);
+                    if (bufRow >= 0 && bufRow < m_rows)
+                        cellPtr = &m_buffer->cell(col, bufRow);
+                }
+            }
+            else {
+                cellPtr = &m_buffer->cell(col, row);
+            }
+
+            if (!cellPtr) continue;
+            const TerminalCell& cell = *cellPtr;
+
+            int x = col * m_cellW;
+            int y = row * m_cellH;
+
+            bool isCursor = (m_scrollOffset == 0)
+                && col == m_parser->cursorCol()
+                && row == m_parser->cursorRow()
+                && m_cursorBlink
+                && hasFocus();
+
+            // Sélection
+            bool inSel = false;
+            if (m_selStart.x() >= 0 && m_selStart != m_selEnd) {
+                QPoint s = m_selStart, e = m_selEnd;
+                if (s.y() > e.y() || (s.y() == e.y() && s.x() > e.x()))
+                    std::swap(s, e);
+                inSel = (row > s.y() || (row == s.y() && col >= s.x())) &&
+                    (row < e.y() || (row == e.y() && col <= e.x()));
+            }
+
+            // Fond
+            QColor bg = isCursor ? cell.fg
+                : inSel ? QColor(80, 130, 200)
+                : cell.bg;
+            p.fillRect(x, y, m_cellW, m_cellH, bg);
+
+            // Texte
+            if (!cell.ch.isNull() && cell.ch != ' ') {
+                QFont f = m_font;
+                f.setBold(cell.bold);
+                f.setItalic(cell.italic);
+                f.setUnderline(cell.underline);
+                p.setFont(f);
+                p.setPen(isCursor ? cell.bg : cell.fg);
+                p.drawText(x, y + baseline, cell.ch);
+            }
+
+            // Curseur par-dessus (souligné par exemple)
+            if (isCursor) {
+                p.fillRect(x, y + m_cellH - 2, m_cellW, 2, cell.fg);
+            }
+        }
+    }
+
+    // Blit
+    QPainter painter(this);
+    painter.drawImage(0, 0, m_backBuffer);
 }
 
 // -----------------------------------------------------------------
@@ -252,6 +350,28 @@ void TerminalWidget::keyPressEvent(QKeyEvent* event)
     if (m_scrollOffset > 0) {
         m_scrollOffset = 0;
         update();
+    }
+
+    // Ctrl+Shift+C - copier
+    if ((event->modifiers() & Qt::ControlModifier) &&
+        (event->modifiers() & Qt::ShiftModifier) &&
+        event->key() == Qt::Key_C)
+    {
+        QString sel = selectedText();
+        if (!sel.isEmpty())
+            QApplication::clipboard()->setText(sel);
+        return;
+    }
+
+    // Ctrl+Shift+V - coller
+    if ((event->modifiers() & Qt::ControlModifier) &&
+        (event->modifiers() & Qt::ShiftModifier) &&
+        event->key() == Qt::Key_V)
+    {
+        QString clip = QApplication::clipboard()->text();
+        if (!clip.isEmpty())
+            sendToSession(clip.toUtf8());
+        return;
     }
 
     QByteArray seq = keyEventToSequence(event);
@@ -345,4 +465,72 @@ void TerminalWidget::setScrollOffset(int offset)
 void TerminalWidget::setProfile(const SessionProfile& p)
 {
     m_profile = p;
+}
+
+// -----------------------------------------------------------------
+// Sélection souris
+// -----------------------------------------------------------------
+
+QPoint TerminalWidget::pixelToCell(const QPoint& px) const
+{
+    return { px.x() / m_cellW, px.y() / m_cellH };
+}
+
+void TerminalWidget::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_selStart = pixelToCell(event->pos());
+		m_selEnd = m_selStart;
+		m_selecting = true;
+		update();
+    }
+}
+
+void TerminalWidget::mouseMoveEvent(QMouseEvent* event)
+{
+    if (m_selecting) {
+        m_selEnd = pixelToCell(event->pos());
+        update();
+    }
+}
+
+void TerminalWidget::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton) {
+        m_selecting = false;
+        m_selEnd = pixelToCell(event->pos());
+        update();
+    }
+}
+
+QString TerminalWidget::selectedText() const
+{
+    if (m_selStart == m_selEnd || m_selStart.x() < 0) return {};
+
+	QPoint start = m_selStart;
+	QPoint end = m_selEnd;
+
+    if (start.y() > end.y() || (start.y() == end.y() && start.x() > end.x())) {
+        std::swap(start, end);
+	}
+
+    QString result;
+    for (int row = start.y(); row <= end.y(); ++row) {
+        int colStart = (row == start.y()) ? start.x() : 0;
+        int colEnd = (row == end.y()) ? end.x() : m_cols - 1;
+        for (int col = colStart; col <= colEnd; ++col) {
+            const TerminalCell& cell = m_buffer->cell(col, row);
+            result += cell.ch.isNull() ? ' ' : cell.ch;
+        }
+        if (row < end.y())
+            result += '\n';
+	}
+    return result;
+}
+
+void TerminalWidget::clearSelection()
+{
+    m_selStart = { -1, -1 };
+    m_selEnd = { -1, -1 };
+    update();
 }

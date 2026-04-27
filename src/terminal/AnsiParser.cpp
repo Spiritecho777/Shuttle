@@ -7,8 +7,14 @@ AnsiParser::AnsiParser(TerminalBuffer* buffer, QObject* parent)
 
 void AnsiParser::feed(const QByteArray& data)
 {
+    if (m_cursorCol < m_buffer->cols() && m_cursorRow < m_buffer->rows())
+        m_buffer->cell(m_cursorCol, m_cursorRow).dirty = true;
+
     for (unsigned char c : data)
         processChar(c);
+
+    if (m_cursorCol < m_buffer->cols() && m_cursorRow < m_buffer->rows())
+        m_buffer->cell(m_cursorCol, m_cursorRow).dirty = true;
 
     emit bufferChanged();
 }
