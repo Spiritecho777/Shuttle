@@ -91,7 +91,6 @@ void TerminalWidget::detachSession()
 
 void TerminalWidget::onDataReceived(const QByteArray& data)
 {
-    qDebug() << "RX:" << data.toHex(' ');
     m_parser->feed(data);
 }
 

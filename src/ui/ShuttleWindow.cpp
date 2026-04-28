@@ -77,6 +77,10 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 
     // --- Barre d’état ---
     statusBar()->showMessage("Prêt");
+
+	m_monitorBar = new MonitorBar(this);
+	statusBar()->addPermanentWidget(m_monitorBar, 1);
+	statusBar()->setSizeGripEnabled(false);
 }
 
 void ShuttleWindow::openSession(const SessionProfile& profile)
@@ -142,14 +146,19 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
         if (!terminal) return;
         const SessionProfile& p = terminal->profile();
         if (p.host.isEmpty() || p.username.isEmpty()) return;
-        if (m_sftpWidget->isConnected())
-            m_sftpWidget->disconnectSession();
+        if (m_sftpWidget->isConnected() && m_currentHost == p.host) return;  // ← nouveau
+
+        m_currentHost = p.host;  // ← nouveau
+        if (m_sftpWidget->isConnected()) m_sftpWidget->disconnectSession();
         m_sftpWidget->connectTo(p);
+        m_monitorBar->connectTo(p);
         sftpDock->show();
         });
 
 	sftpDock->show();
+
 	m_sftpWidget->connectTo(profile);
+	m_monitorBar->connectTo(profile);
 }
 
 void ShuttleWindow::deleteSession(int index)
@@ -204,6 +213,8 @@ void ShuttleWindow::closeTab(int index)
     if (tabs->count() <= 1) {
 		sftpDock->hide();
 		m_sftpWidget->disconnectSession();
+		m_monitorBar->disconnectSession();
+        m_currentHost.clear();
     }
 
     w->deleteLater();

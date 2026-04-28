@@ -37,7 +37,6 @@ void AnsiParser::processChar(unsigned char c)
         else if (c == '\b') {                 // Backspace
             if (m_cursorCol > 0) {
                 m_cursorCol--;
-                m_buffer->cell(m_cursorCol, m_cursorRow).reset(); // Marque la cellule comme dirty pour forcer le repaint
             }
         }
         else if (c == '\t') {                 // Tab — aligne sur multiple de 8

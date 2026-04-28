@@ -5,6 +5,7 @@
 #include "../ssh/SSHSession.h"
 #include "../terminal/TerminalWidget.h"
 #include "../sftp/SftpWidget.h"
+#include "monitor/MonitorBar.h"
 #include "NewSessionDialog.h"
 
 #include <QMainWindow>
@@ -40,9 +41,11 @@ private:
 	QTabWidget* tabs;
 	QDockWidget* profileDock;
 	QDockWidget* sftpDock;
+	QString m_currentHost;
 
 	HomeTab* homeTab;
 	ProfileStore* profileStore;
 	ProfileListWidget* profileList;
 	SftpWidget* m_sftpWidget = nullptr;
+	MonitorBar* m_monitorBar = nullptr;
 };
