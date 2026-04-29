@@ -6,13 +6,12 @@
 #include <QFontMetrics>
 #include <QScrollBar>
 #include <QVBoxLayout>
+#include <QMenu>
 
 #include "TerminalBuffer.h"
 #include "AnsiParser.h"
 #include "../ssh/SSHSession.h"
 #include "../ssh/SessionProfile.h"
-
-//class SSHSession;
 
 class TerminalWidget : public QWidget
 {
@@ -106,4 +105,7 @@ private:
 	QPoint pixelToCell(const QPoint& px) const;
 	QString selectedText() const;
 	void clearSelection();
+
+	// Menu contextuel
+	void showContextMenu(const QPoint& pos);
 };

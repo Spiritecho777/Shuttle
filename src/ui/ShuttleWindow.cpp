@@ -70,14 +70,7 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
         sftpDock->show();
     });
 
-    // --- Barre de menus ---
-    //QMenu* sessionMenu = menuBar()->addMenu("Sessions");
-    //sessionMenu->addAction("Nouvelle session", this, &ShuttleWindow::openSession);
-    //sessionMenu->addAction("Fermer la session", this, &ShuttleWindow::closeCurrentSession);
-
     // --- Barre d’état ---
-    statusBar()->showMessage("Prêt");
-
 	m_monitorBar = new MonitorBar(this);
 	statusBar()->addPermanentWidget(m_monitorBar, 1);
 	statusBar()->setSizeGripEnabled(false);

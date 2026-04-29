@@ -132,9 +132,6 @@ QByteArray MonitorSession::execCommand(const QString& cmd)
     libssh2_channel_close(channel);
     libssh2_channel_free(channel);
 
-    qDebug() << "=== RAW OUTPUT ===";
-    qDebug() << QString::fromUtf8(result);
-
     return result;
 }
 

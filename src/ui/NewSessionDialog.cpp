@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QApplication>
 #include <QStyle>
+#include <QMessageBox>
 
 NewSessionDialog::NewSessionDialog(QWidget* parent)
 	: QDialog(parent)
@@ -37,6 +38,10 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     connect(createBtn, &QPushButton::clicked, this, &NewSessionDialog::onCreateClicked);
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
 
+    connect(keyPathEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
+    connect(passphraseEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
+    connect(passwordEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
+
 	QHBoxLayout* keyLayout = new QHBoxLayout();
 	keyLayout->addWidget(keyPathEdit);
 	keyLayout->addWidget(browseKeyBtn);
@@ -60,10 +65,22 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     layout->addLayout(buttons);
 
     setLayout(layout);
+
+    updateAuthFields();
 }
 
 void NewSessionDialog::onCreateClicked()
 {
+    if (nameEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "Le nom du profil est obligatoire.");
+        return;
+    }
+
+    if (hostEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "Le champ Hôte est obligatoire.");
+        return;
+    }
+
     SessionProfile profile;
     profile.name = nameEdit->text();
     profile.host = hostEdit->text();
@@ -107,4 +124,17 @@ void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
 
 	setWindowTitle("Modifier le profil");
     createBtn->setText("Enregistrer");
+}
+
+void NewSessionDialog::updateAuthFields()
+{
+    bool hasKey = !keyPathEdit->text().isEmpty() || !passphraseEdit->text().isEmpty();
+    bool hasUserPass = !passwordEdit->text().isEmpty();
+
+    // Si une clé est renseignée → désactiver user + password
+    passwordEdit->setEnabled(!hasKey);
+
+    // Si password est renseigné → désactiver clé + passphrase
+    keyPathEdit->setEnabled(!hasUserPass);
+    passphraseEdit->setEnabled(!hasUserPass);
 }

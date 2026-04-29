@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QMouseEvent>
+#include <QMenu>
 
 TerminalWidget::TerminalWidget(QWidget* parent)
     : QWidget(parent)
@@ -53,6 +54,10 @@ TerminalWidget::TerminalWidget(QWidget* parent)
     p.setColor(QPalette::Window, Qt::black);
     setPalette(p);
     setAutoFillBackground(true);
+
+    // Menu contextuel
+	setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &QWidget::customContextMenuRequested, this, &TerminalWidget::showContextMenu);
 }
 
 TerminalWidget::~TerminalWidget()
@@ -138,87 +143,6 @@ void TerminalWidget::recalcGrid()
 // -----------------------------------------------------------------
 // Rendu
 // -----------------------------------------------------------------
-
-/*void TerminalWidget::paintEvent(QPaintEvent*)
-{
-    QPainter painter(this);
-    painter.setFont(m_font);
-
-    QFontMetrics fm(m_font);
-    int baseline = fm.ascent(); // offset texte dans la cellule
-
-    int totalRows = m_rows;
-
-    for (int row = 0; row < totalRows; ++row) {
-        for (int col = 0; col < m_cols; ++col) {
-
-            // Si on est dans le scrollback
-            int bufRow = row;
-            const TerminalCell* cellPtr = nullptr;
-
-            if (m_scrollOffset > 0) {
-                int sbSize = m_buffer->scrollbackSize();
-                int sbRow = sbSize - m_scrollOffset + row;
-                if (sbRow >= 0 && sbRow < sbSize) {
-                    cellPtr = &m_buffer->scrollback()[sbRow][qMin(col, (int)m_buffer->scrollback()[sbRow].size() - 1)];
-                }
-                else {
-                    bufRow = row - (m_scrollOffset - sbSize);
-                    if (bufRow >= 0 && bufRow < m_rows)
-                        cellPtr = &m_buffer->cell(col, bufRow);
-                }
-            }
-            else {
-                cellPtr = &m_buffer->cell(col, bufRow);
-            }
-
-            if (!cellPtr) continue;
-            const TerminalCell& cell = *cellPtr;
-
-            int x = col * m_cellW;
-            int y = row * m_cellH;
-
-            // Fond
-            painter.fillRect(x, y, m_cellW, m_cellH, cell.bg);
-
-			// Sélection
-			QPoint normStart = m_selStart, normEnd = m_selEnd;
-			if (normStart.y() > normEnd.y() || (normStart.y() == normEnd.y() && normStart.x() > normEnd.x()))
-				std::swap(normStart, normEnd);
-
-			bool inSelection = (m_selStart.x() >= 0) &&
-				(row > normStart.y() || (row == normStart.y() && col >= normStart.x())) &&
-				(row < normEnd.y() || (row == normEnd.y() && col <= normEnd.x()));
-
-            if (inSelection) {
-                painter.fillRect(x, y, m_cellW, m_cellH, QColor(80,130,200,180));
-			}
-
-            // Curseur
-            bool isCursor = (m_scrollOffset == 0)
-                && (col == m_parser->cursorCol())
-                && (row == m_parser->cursorRow())
-                && m_cursorVisible
-                && m_cursorBlink
-                && hasFocus();
-
-            if (isCursor)
-                painter.fillRect(x, y, m_cellW, m_cellH, cell.fg);
-
-            // Texte
-            if (!cell.ch.isNull() && cell.ch != ' ') {
-                QFont f = m_font;
-                f.setBold(cell.bold);
-                f.setItalic(cell.italic);
-                f.setUnderline(cell.underline);
-                painter.setFont(f);
-
-                painter.setPen(isCursor ? cell.bg : cell.fg);
-                painter.drawText(x, y + baseline, cell.ch);
-            }
-        }
-    }
-}*/
 void TerminalWidget::paintEvent(QPaintEvent*)
 {
     // Recrée le backbuffer si la taille a changé
@@ -345,6 +269,10 @@ void TerminalWidget::keyPressEvent(QKeyEvent* event)
 {
     if (!m_session) return;
 
+	if (m_selStart.x() >= 0 && m_selStart != m_selEnd) {
+        clearSelection();
+    }
+
     // Remettre en bas si on était dans le scrollback
     if (m_scrollOffset > 0) {
         m_scrollOffset = 0;
@@ -374,8 +302,9 @@ void TerminalWidget::keyPressEvent(QKeyEvent* event)
     }
 
     QByteArray seq = keyEventToSequence(event);
-    if (!seq.isEmpty())
+    if (!seq.isEmpty()) {
         sendToSession(seq);
+    }
 }
 
 QByteArray TerminalWidget::keyEventToSequence(QKeyEvent* event)
@@ -532,4 +461,36 @@ void TerminalWidget::clearSelection()
     m_selStart = { -1, -1 };
     m_selEnd = { -1, -1 };
     update();
+}
+
+// Menu contextuel pour copier/coller
+void TerminalWidget::showContextMenu(const QPoint& pos)
+{
+    QMenu menu(this);
+
+    QAction* copyAct = menu.addAction("Copier ");
+	copyAct->setShortcut(QKeySequence("Ctrl+Shift+C"));
+	copyAct->setShortcutVisibleInContextMenu(true);
+    QAction* pasteAct = menu.addAction("Coller");
+	pasteAct->setShortcut(QKeySequence("Ctrl+Shift+V"));
+	pasteAct->setShortcutVisibleInContextMenu(true);
+
+    // Désactiver "Copier" si rien n'est sélectionné
+    copyAct->setEnabled(!selectedText().isEmpty());
+
+	pasteAct->setEnabled(!QApplication::clipboard()->text().isEmpty());
+
+    QAction* chosen = menu.exec(mapToGlobal(pos));
+    if (!chosen) return;
+
+    if (chosen == copyAct) {
+        QString sel = selectedText();
+        if (!sel.isEmpty())
+            QApplication::clipboard()->setText(sel);
+    }
+    else if (chosen == pasteAct) {
+        QString clip = QApplication::clipboard()->text();
+        if (!clip.isEmpty())
+            sendToSession(clip.toUtf8());
+    }
 }

@@ -17,8 +17,7 @@
 
 SSHSession::SSHSession(const QString& host, int port, const QString& username, const QString& password, const QString& privateKeyPath, const QString& passphrase, QObject* parent)
 	: QThread(parent), host(host), port(port), username(username), password(password), privateKeyPath(privateKeyPath), passphrase(passphrase)
-{
-}
+{}
 
 SSHSession::~SSHSession()
 {
@@ -32,7 +31,7 @@ void SSHSession::disconnectSession()
 
 	running.store(false, std::memory_order_relaxed);
 
-	if(channel) {
+	if (channel) {
 		LIBSSH2_CHANNEL* ch = channel;
 		channel = nullptr;
 		libssh2_channel_close(ch);
@@ -52,7 +51,7 @@ void SSHSession::disconnectSession()
 #else
 	if (sock >= 0) { ::close(sock); sock = -1; }
 #endif
-	
+
 	emit disconnected();
 }
 
@@ -218,7 +217,7 @@ void SSHSession::run()
 	}
 
 	disconnectSession();
-}
+	}
 
 void SSHSession::resizePty(int cols, int rows)
 {

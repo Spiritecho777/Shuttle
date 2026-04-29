@@ -39,4 +39,6 @@ private:
 
     QPushButton* createBtn;
     QPushButton* cancelBtn;
+
+	void updateAuthFields();
 };
