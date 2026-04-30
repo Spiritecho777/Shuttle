@@ -11,6 +11,8 @@
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QDockWidget>
+#include <QMap>
+#include <QProcess>
 
 class HomeTab;
 class ProfileStore;
@@ -24,6 +26,7 @@ public:
 	explicit ShuttleWindow(QWidget* parent = nullptr);
 
 	void openSession(const SessionProfile& profile);
+	bool isTunnelConnected(const QString& tunnelName) const;
 
 signals:
 	void requestConnect(const QString& tunnelName);
@@ -42,6 +45,7 @@ private:
 	QDockWidget* profileDock;
 	QDockWidget* sftpDock;
 	QString m_currentHost;
+	QMap<QString, QProcess*> m_tunnels;
 
 	HomeTab* homeTab;
 	ProfileStore* profileStore;

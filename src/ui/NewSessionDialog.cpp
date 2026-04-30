@@ -20,7 +20,7 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     userEdit = new QLineEdit(this);
 
     portSpin = new QSpinBox(this);
-    portSpin->setRange(1, 65535);
+    portSpin->setRange(0, 65535);
     portSpin->setValue(22);
 
     keyPathEdit = new QLineEdit(this);
@@ -30,6 +30,10 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     passwordEdit->setEchoMode(QLineEdit::Password);
     passphraseEdit = new QLineEdit(this);
     passphraseEdit->setEchoMode(QLineEdit::Password);
+
+	portTunnelSpin = new QSpinBox(this);
+	portTunnelSpin->setRange(0, 65535);
+	portTunnelSpin->setValue(0);
 
     createBtn = new QPushButton("Créer", this);
     cancelBtn = new QPushButton("Annuler", this);
@@ -41,6 +45,7 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     connect(keyPathEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
     connect(passphraseEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
     connect(passwordEdit, &QLineEdit::textChanged, this, &NewSessionDialog::updateAuthFields);
+	connect(portTunnelSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, &NewSessionDialog::updateAuthFields);
 
 	QHBoxLayout* keyLayout = new QHBoxLayout();
 	keyLayout->addWidget(keyPathEdit);
@@ -54,6 +59,7 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
     form->addRow("Clé privée :", keyLayout);
     form->addRow("Mot de passe :", passwordEdit);
     form->addRow("Passphrase :", passphraseEdit);
+    form->addRow("Port du tunnel :", portTunnelSpin);
 
     QHBoxLayout* buttons = new QHBoxLayout();
     buttons->addStretch();
@@ -81,6 +87,23 @@ void NewSessionDialog::onCreateClicked()
         return;
     }
 
+    bool tunnelEnabled = portTunnelSpin->value() != 0;
+    bool hasUser = !userEdit->text().trimmed().isEmpty();
+    bool hasKey = !keyPathEdit->text().isEmpty();
+    bool hasPassword = !passwordEdit->text().isEmpty();
+
+    if (tunnelEnabled) {
+        if (!hasUser) {
+            QMessageBox::warning(this, "Erreur", "Un nom d'utilisateur est obligatoire pour un tunnel SSH.");
+            return;
+        }
+
+        if (!hasKey && !hasPassword) {
+            QMessageBox::warning(this, "Erreur", "Une clé privée ou un mot de passe est obligatoire pour un tunnel SSH.");
+            return;
+        }
+    }
+
     SessionProfile profile;
     profile.name = nameEdit->text();
     profile.host = hostEdit->text();
@@ -89,10 +112,11 @@ void NewSessionDialog::onCreateClicked()
     profile.privateKeyPath = keyPathEdit->text();
     profile.password = passwordEdit->text();
     profile.passphrase = passphraseEdit->text();
+	profile.portTunnel = portTunnelSpin->value();
 	profile.authMethod = keyPathEdit->text().isEmpty() ? AuthMethod::Password : AuthMethod::PublicKey;
 
     if (editMode) {
-		emit profileEdited(profile, editIndex);
+        emit profileEdited(profile, editIndex);
 	}
     else {
         emit profileCreated(profile);
@@ -121,6 +145,7 @@ void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
     keyPathEdit->setText(profile.privateKeyPath);
     passwordEdit->setText(profile.password);
     passphraseEdit->setText(profile.passphrase);
+	portTunnelSpin->setValue(profile.portTunnel);
 
 	setWindowTitle("Modifier le profil");
     createBtn->setText("Enregistrer");

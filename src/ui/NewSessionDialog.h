@@ -36,6 +36,7 @@ private:
     QLineEdit* keyPathEdit;
     QLineEdit* passwordEdit;
     QLineEdit* passphraseEdit;
+	QSpinBox* portTunnelSpin;
 
     QPushButton* createBtn;
     QPushButton* cancelBtn;

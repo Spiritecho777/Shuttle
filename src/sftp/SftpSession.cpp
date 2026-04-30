@@ -99,14 +99,6 @@ void SftpSession::run()
 {
     m_running = true;
 
-#ifdef _WIN32
-    WSADATA wsadata;
-    if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0) {
-        emit connectionFailed("WSAStartup failed");
-        return;
-    }
-#endif
-
     if (!initSocket() || !initSsh() || !initSftp()) {
         cleanup();
         return;
@@ -254,7 +246,6 @@ void SftpSession::cleanup()
     }
 #ifdef _WIN32
     if (m_sock != INVALID_SOCKET) { closesocket(m_sock); m_sock = INVALID_SOCKET; }
-    WSACleanup();
 #else
     if (m_sock >= 0) { ::close(m_sock); m_sock = -1; }
 #endif

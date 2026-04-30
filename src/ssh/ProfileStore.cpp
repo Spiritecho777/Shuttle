@@ -67,10 +67,10 @@ void ProfileStore::load()
 		profile.port = obj["port"].toInt(22);
 		profile.privateKeyPath = obj["privateKeyPath"].toString();
 		profile.password = obj["password"].toString();
+		profile.portTunnel = obj["portTunnel"].toInt(0);
 		profile.passphrase = obj["passphrase"].toString();
-		
-		QString method = obj["authMethod"].toString("Password");
-		profile.authMethod = (method == "PublicKey") ? AuthMethod::PublicKey : AuthMethod::Password;
+		QString method = obj["authMethod"].toString("password");
+		profile.authMethod = (method == "publickey") ? AuthMethod::PublicKey : AuthMethod::Password;
 		
 		m_profiles.append(profile);
 	}
@@ -100,13 +100,12 @@ void ProfileStore::save() const
 		obj["port"] = profile.port;
 		obj["privateKeyPath"] = profile.privateKeyPath;
 		obj["password"] = profile.password;
+		obj["portTunnel"] = profile.portTunnel;
 		obj["passphrase"] = profile.passphrase;
 		obj["authMethod"] = (profile.authMethod == AuthMethod::PublicKey)
 			? "publickey" : "password";
 		arr.append(obj);
 	}
-
-
 
 	QJsonDocument doc(arr);
 	QByteArray plain = doc.toJson();

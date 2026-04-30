@@ -145,11 +145,16 @@ void SftpWidget::connectTo(const SessionProfile& profile)
 void SftpWidget::disconnectSession()
 {
     if (!m_session) return;
-    m_session->disconnectSession();
-    m_session->wait(3000);
-    m_session->deleteLater();
+    SftpSession* s = m_session;
     m_session = nullptr;
+    s->disconnectSession();
+    s->wait(5000);
+    delete s;
     m_connected = false;
+
+    m_statusLabel->setText("Non connecté");
+    m_view->setEnabled(false);
+    m_pathEdit->setEnabled(false);
 }
 
 // -----------------------------------------------------------------

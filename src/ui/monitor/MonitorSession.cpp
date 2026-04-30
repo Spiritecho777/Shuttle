@@ -17,7 +17,9 @@ static const char* kCollectCmd =
 "echo '===CPU==='; cat /proc/stat | grep '^cpu '; "
 "echo '===MEM==='; cat /proc/meminfo | grep -E '^(MemTotal|MemAvailable):'; "
 "echo '===NET==='; cat /proc/net/dev; "
-"echo '===DISK==='; /bin/df -h --output=target,pcent 2>/dev/null | tail -n +2";
+"echo '===DISK==='; /bin/df -h --output=target,pcent 2>/dev/null | tail -n +2; "
+"echo '===SESS==='; who; "
+"echo '===SESS_SSH_ESTAB==='; ss -t | grep 'ESTAB' | grep -c ssh || true";
 
 MonitorSession::MonitorSession(const SessionProfile& profile, QObject* parent)
     : QThread(parent), m_profile(profile)
@@ -32,8 +34,11 @@ MonitorSession::~MonitorSession()
 void MonitorSession::stopMonitor()
 {
     m_running.store(false);
-    // Réveille le thread s'il dort
-    this->requestInterruption();
+    requestInterruption();
+
+    // Ferme le socket pour débloquer les appels libssh2 en cours
+    if (m_session)
+        libssh2_session_set_blocking(m_session, 0);
 }
 
 // -----------------------------------------------------------------
@@ -43,14 +48,6 @@ void MonitorSession::stopMonitor()
 void MonitorSession::run()
 {
     m_running.store(true);
-
-#ifdef _WIN32
-    WSADATA wsadata;
-    if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0) {
-        emit connectionFailed("Monitor WSAStartup failed");
-        return;
-    }
-#endif
 
     if (!initSocket() || !initSsh()) {
         cleanup();
@@ -217,6 +214,26 @@ MonitorData MonitorSession::parseOutput(const QByteArray& raw)
         data.disks.append(disk);
     }
 
+	// --- Sessions SSH ---
+    QString whoSection = extractSection("SESS");
+    QString sessSshEstab= extractSection("SESS_SSH_ESTAB");
+	QStringList whoLines = whoSection.split('\n', Qt::SkipEmptyParts);
+
+    data.interactiveSessions = 0;
+	data.physicalSessions = 0;
+
+    for (const QString& line : whoLines){
+        if (line.contains("pts/"))
+            data.interactiveSessions++;
+
+		if (line.contains("tty") && !line.contains("(:0)"))
+            data.physicalSessions++;
+	}
+
+	int sshEstab = sessSshEstab.toInt();
+    data.totalSessions = sshEstab;
+	data.nonInteractiveSessions = qMax(0, sshEstab - data.interactiveSessions);
+
     m_firstRun = false;
     return data;
 }
@@ -370,7 +387,6 @@ void MonitorSession::cleanup()
     }
 #ifdef _WIN32
     if (m_sock != INVALID_SOCKET) { closesocket(m_sock); m_sock = INVALID_SOCKET; }
-    WSACleanup();
 #else
     if (m_sock >= 0) { ::close(m_sock); m_sock = -1; }
 #endif

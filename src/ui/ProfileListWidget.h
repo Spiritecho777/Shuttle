@@ -1,5 +1,6 @@
 #pragma once
 #include "../ssh/SessionProfile.h"
+#include "ShuttleWindow.h"
 
 #include <QWidget>
 #include <QListWidget>
@@ -17,6 +18,8 @@ signals:
 	void profileSelected(const SessionProfile& profile);
 	void profileDeletedRequested(int index);
 	void profileEditRequested(const SessionProfile& profile, int index);
+	void tunnelStartRequested(const SessionProfile& profile);
+	void tunnelStopRequested(const SessionProfile& profile);
 
 private slots:
 	void refreshList();

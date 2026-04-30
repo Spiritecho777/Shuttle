@@ -15,8 +15,8 @@
 #include <unistd.h>
 #endif
 
-SSHSession::SSHSession(const QString& host, int port, const QString& username, const QString& password, const QString& privateKeyPath, const QString& passphrase, QObject* parent)
-	: QThread(parent), host(host), port(port), username(username), password(password), privateKeyPath(privateKeyPath), passphrase(passphrase)
+SSHSession::SSHSession(const QString& host, int port, const QString& username, const QString& password, const QString& privateKeyPath, int portTunnel, const QString& passphrase, QObject* parent)
+	: QThread(parent), host(host), port(port), username(username), password(password), privateKeyPath(privateKeyPath), portTunnel(portTunnel), passphrase(passphrase)
 {}
 
 SSHSession::~SSHSession()
@@ -26,11 +26,12 @@ SSHSession::~SSHSession()
 
 void SSHSession::disconnectSession()
 {
-	if (!running.load() && !session && !channel)
+	if (m_disconnecting.exchange(true))
 		return;
 
 	running.store(false, std::memory_order_relaxed);
 
+	QMutexLocker lock(&m_mutex);
 	if (channel) {
 		LIBSSH2_CHANNEL* ch = channel;
 		channel = nullptr;
@@ -47,7 +48,6 @@ void SSHSession::disconnectSession()
 
 #ifdef _WIN32
 	if (sock != INVALID_SOCKET) { closesocket(sock); sock = INVALID_SOCKET; }
-	WSACleanup();
 #else
 	if (sock >= 0) { ::close(sock); sock = -1; }
 #endif
@@ -66,15 +66,6 @@ void SSHSession::writeData(const QByteArray& data)
 void SSHSession::run()
 {
 	running.store(true, std::memory_order_relaxed);
-
-#ifdef _WIN32
-	WSADATA wsadata;
-	int err = WSAStartup(MAKEWORD(2, 2), &wsadata);
-	if (err != 0) {
-		emit connectionFailed("WSAStartup failed");
-		return;
-	}
-#endif
 
 	// --- SOCKET ---
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -202,18 +193,22 @@ void SSHSession::run()
 	char bufferErr[4096];
 
 	while (running) {
-		long n = libssh2_channel_read(channel, bufferOut, sizeof(bufferOut));
-		long n2 = libssh2_channel_read_stderr(channel, bufferErr, sizeof(bufferErr));
+		long n, n2;
+		{
+			QMutexLocker lock(&m_mutex);
+			if (!channel) break;
+			n = libssh2_channel_read(channel, bufferOut, sizeof(bufferOut));
+			n2 = libssh2_channel_read_stderr(channel, bufferErr, sizeof(bufferErr));
+			if (libssh2_channel_eof(channel)) break;
+		}
 
 		if (n == LIBSSH2_ERROR_EAGAIN && n2 == LIBSSH2_ERROR_EAGAIN) {
-			msleep(10);
+			msleep(10);  // ← hors du mutex
 			continue;
 		}
 
 		if (n > 0)  emit dataReceived(QByteArray(bufferOut, static_cast<int>(n)));
 		if (n2 > 0) emit dataReceived(QByteArray(bufferErr, static_cast<int>(n2)));
-
-		if (libssh2_channel_eof(channel)) break;
 	}
 
 	disconnectSession();

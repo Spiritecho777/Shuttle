@@ -47,25 +47,43 @@ void ProfileListWidget::onItemClicked(QListWidgetItem* item)
 
 void ProfileListWidget::showContextMenu(const QPoint& pos)
 {
-	QListWidgetItem* item = list->itemAt(pos);
-	if (!item) return;
+    QListWidgetItem* item = list->itemAt(pos);
+    if (!item) return;
 
-	int row = list->row(item);
-	
-	if (row < 0 || row >= store->profiles().size())
-		return;
+    int row = list->row(item);
+    if (row < 0 || row >= store->profiles().size())
+        return;
 
-	const SessionProfile selectedProfile = store->profiles().at(row);
-	
-	QMenu contextMenu;
-	contextMenu.addAction("Ouvrir", [this, selectedProfile]() {
-		emit profileSelected(selectedProfile);
-	});
-	contextMenu.addAction("Modifier", [this, selectedProfile, row]() {
-		emit profileEditRequested(selectedProfile, row);
-	});
-	contextMenu.addAction("Supprimer", [this, row]() {
-		emit profileDeletedRequested(row);
-	});
-	contextMenu.exec(list->viewport()->mapToGlobal(pos));
+    ShuttleWindow* main = qobject_cast<ShuttleWindow*>(window());
+    QMenu contextMenu;
+
+    // Capture uniquement l'index
+    int idx = row;
+
+    const SessionProfile& p = store->profiles().at(idx);
+
+    if (main && main->isTunnelConnected(p.name)) {
+        contextMenu.addAction("Fermer le tunnel SSH", [this, idx]() {
+            emit tunnelStopRequested(store->profiles().at(idx));
+            });
+    }
+    else {
+        contextMenu.addAction("Monter le tunnel SSH", [this, idx]() {
+            emit tunnelStartRequested(store->profiles().at(idx));
+            });
+    }
+
+    contextMenu.addAction("Ouvrir", [this, idx]() {
+        emit profileSelected(store->profiles().at(idx));
+        });
+
+    contextMenu.addAction("Modifier", [this, idx]() {
+        emit profileEditRequested(store->profiles().at(idx), idx);
+        });
+
+    contextMenu.addAction("Supprimer", [this, idx]() {
+        emit profileDeletedRequested(idx);
+        });
+
+    contextMenu.exec(list->viewport()->mapToGlobal(pos));
 }

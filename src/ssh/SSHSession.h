@@ -3,15 +3,12 @@
 #include <QObject>
 #include <QThread>
 #include <QString>
+#include <QMutex>
 #include <atomic>
 
 #include "AuthMethod.h"
 
 #include <libssh2.h>
-
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
 
 class SSHSession : public QThread
 {
@@ -19,7 +16,7 @@ class SSHSession : public QThread
 
 
 public:
-	SSHSession(const QString& host, int port, const QString& username, const QString& password, const QString& privateKeyPath, const QString& passphrase = "", QObject* parent = nullptr);
+	SSHSession(const QString& host, int port, const QString& username, const QString& password, const QString& privateKeyPath, int portTunnel, const QString& passphrase = "", QObject* parent = nullptr);
 
 	~SSHSession();
 
@@ -43,9 +40,12 @@ private:
 	QString username;
 	QString password;
 	QString privateKeyPath;
+	int portTunnel;
 	QString passphrase;
 
 	AuthMethod authMethod{ AuthMethod::Password };
+
+	QMutex m_mutex;
 
 #ifdef _WIN32
 	SOCKET sock = INVALID_SOCKET;
@@ -56,4 +56,5 @@ private:
 	LIBSSH2_CHANNEL* channel = nullptr;
 
 	std::atomic<bool> running{ false };
+	std::atomic<bool> m_disconnecting{ false };
 };

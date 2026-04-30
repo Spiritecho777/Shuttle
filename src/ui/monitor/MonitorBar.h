@@ -36,6 +36,7 @@ private:
     QLabel* m_netLabel = nullptr;
     QLabel* m_diskLabel = nullptr;
     QLabel* m_hostLabel = nullptr;
+	QLabel* m_sessLabel = nullptr;
 
 	QWidget* makeSeparator();
 };

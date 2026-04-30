@@ -24,5 +24,11 @@ struct MonitorData {
     // Disques
     QList<DiskInfo> disks;
 
+    // Session
+    int interactiveSessions = 0;
+    int nonInteractiveSessions = 0;
+	int physicalSessions = 0;
+    int totalSessions = 0;
+
     bool valid = false;  // false si la collecte a échoué
 };

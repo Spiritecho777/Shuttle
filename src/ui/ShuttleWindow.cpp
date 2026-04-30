@@ -53,22 +53,20 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 
 	connect(tabs, &QTabWidget::tabCloseRequested, this, &ShuttleWindow::closeTab);
     connect(tabs, &QTabWidget::currentChanged, this, [this](int index) {
-        // Ignore si on est en train de construire un onglet
         QWidget* w = tabs->widget(index);
         if (!w || w == homeTab) return;
-
         auto* terminal = qobject_cast<TerminalWidget*>(w);
         if (!terminal) return;
-
         const SessionProfile& p = terminal->profile();
-        if (p.host.isEmpty() || p.username.isEmpty()) return;  // ← ajoute username
+        if (p.host.isEmpty() || p.username.isEmpty()) return;
+        if (m_sftpWidget->isConnected() && m_currentHost == p.host) return;
 
-        if (m_sftpWidget->isConnected())
-            m_sftpWidget->disconnectSession();
-
+        m_currentHost = p.host;
+        if (m_sftpWidget->isConnected()) m_sftpWidget->disconnectSession();
         m_sftpWidget->connectTo(p);
+        m_monitorBar->connectTo(p);
         sftpDock->show();
-    });
+        });
 
     // --- Barre d’état ---
 	m_monitorBar = new MonitorBar(this);
@@ -76,10 +74,9 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	statusBar()->setSizeGripEnabled(false);
 }
 
+// Profil
 void ShuttleWindow::openSession(const SessionProfile& profile)
 {
-	disconnect(tabs, &QTabWidget::currentChanged, nullptr, nullptr); // Évite de déclencher le slot lors de l'ajout d'un nouvel onglet
-
     // --- Création session SSH ---
     auto* session = new SSHSession(
         profile.host,
@@ -87,6 +84,7 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
         profile.username,
         profile.password,
         profile.privateKeyPath,
+		profile.portTunnel,
         profile.passphrase,
         this
     );
@@ -131,27 +129,7 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
     int idx = tabs->addTab(terminal, profile.name);
     tabs->setCurrentIndex(idx);
 
-    // Reconnecte après
-    connect(tabs, &QTabWidget::currentChanged, this, [this](int index) {
-        QWidget* w = tabs->widget(index);
-        if (!w || w == homeTab) return;
-        auto* terminal = qobject_cast<TerminalWidget*>(w);
-        if (!terminal) return;
-        const SessionProfile& p = terminal->profile();
-        if (p.host.isEmpty() || p.username.isEmpty()) return;
-        if (m_sftpWidget->isConnected() && m_currentHost == p.host) return;  // ← nouveau
-
-        m_currentHost = p.host;  // ← nouveau
-        if (m_sftpWidget->isConnected()) m_sftpWidget->disconnectSession();
-        m_sftpWidget->connectTo(p);
-        m_monitorBar->connectTo(p);
-        sftpDock->show();
-        });
-
 	sftpDock->show();
-
-	m_sftpWidget->connectTo(profile);
-	m_monitorBar->connectTo(profile);
 }
 
 void ShuttleWindow::deleteSession(int index)
@@ -172,7 +150,6 @@ void ShuttleWindow::onProfileEdited(const SessionProfile& profile, int index)
     profileStore->updateProfile(index, profile);
 }
 
-
 void ShuttleWindow::openNewProfileDialog()
 {
     NewSessionDialog* dialog = new NewSessionDialog(this);
@@ -185,6 +162,7 @@ void ShuttleWindow::onProfileCreated(const SessionProfile& profile)
 	profileStore->addProfile(profile);
 }
 
+// Tab
 void ShuttleWindow::closeTab(int index)
 {
     QWidget* w = tabs->widget(index);
@@ -211,4 +189,10 @@ void ShuttleWindow::closeTab(int index)
     }
 
     w->deleteLater();
+}
+
+// Tunnel
+bool ShuttleWindow::isTunnelConnected(const QString& tunnelName) const
+{
+	return m_tunnels.contains(tunnelName);
 }

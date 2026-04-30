@@ -2,7 +2,7 @@
 
 SSHSessionManager::SSHSessionManager(QObject* parent) : QObject(parent) {}
 
-SSHSessionManager::~SSHSessionManager() { closeAll(); }
+SSHSessionManager::~SSHSessionManager() {}
 
 int SSHSessionManager::openSession(const SessionProfile& profile)
 {
@@ -12,8 +12,9 @@ int SSHSessionManager::openSession(const SessionProfile& profile)
         profile.port, 
         profile.username,
 		profile.password,
-        profile.privateKeyPath, 
-        profile.passphrase, 
+        profile.privateKeyPath,
+        profile.portTunnel,
+        profile.passphrase,
         this
     );
 

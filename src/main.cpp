@@ -8,9 +8,18 @@
 #include "ui/ShuttleWindow.h"
 #include "ui/TrayManager.h"
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 int main(int argc, char* argv[])
 {
 	libssh2_init(0);
+
+#ifdef _WIN32
+    WSADATA wsadata;
+    WSAStartup(MAKEWORD(2, 2), &wsadata);
+#endif
 
     QCoreApplication::setOrganizationName("Stusoft");
     QCoreApplication::setApplicationName("Shuttle");
@@ -30,5 +39,10 @@ int main(int argc, char* argv[])
 
     int ret = a.exec();
 	libssh2_exit();
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
+
     return ret;
 }

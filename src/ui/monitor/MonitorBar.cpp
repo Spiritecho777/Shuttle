@@ -71,6 +71,14 @@ void MonitorBar::setupUi()
     m_diskLabel = new QLabel("Disques: —", this);
     layout->addWidget(m_diskLabel);
 
+	layout->addWidget(makeSeparator());
+
+    // Sessions
+    auto* sessIcon = new QLabel("👥", this);
+    layout->addWidget(sessIcon);
+    m_sessLabel = new QLabel("Sessions: —", this);
+	layout->addWidget(m_sessLabel);
+
     layout->addStretch();
 }
 
@@ -105,10 +113,13 @@ void MonitorBar::connectTo(const SessionProfile& profile)
 void MonitorBar::disconnectSession()
 {
     if (!m_session) return;
-    m_session->stopMonitor();
-    m_session->wait(2000);
-    m_session->deleteLater();
+    
+    MonitorSession* s = m_session;
     m_session = nullptr;
+
+    s->stopMonitor();
+    s->wait(5000);
+    delete s;
 
     // Reset affichage
     m_cpuLabel->setText("CPU: —");
@@ -162,6 +173,12 @@ void MonitorBar::onDataUpdated(const MonitorData& data)
         m_diskLabel->setText(parts.join("  "));
         m_diskLabel->setTextFormat(Qt::RichText);
     }
+
+    // Sessions
+    m_sessLabel->setText(QString("Sessions:  🖥️%1 👤%2 🔧%3")
+		.arg(data.physicalSessions)
+        .arg(data.interactiveSessions)
+        .arg(data.nonInteractiveSessions));
 }
 
 QString MonitorBar::formatBytes(float bytesPerSec) const
