@@ -62,15 +62,23 @@ void ProfileListWidget::showContextMenu(const QPoint& pos)
 
     const SessionProfile& p = store->profiles().at(idx);
 
+    bool hasTunnel = (p.portTunnel > 0);
+    bool hasKey = !p.privateKeyPath.isEmpty();
+
+    bool canStartTunnel = hasTunnel && hasKey;
+
     if (main && main->isTunnelConnected(p.name)) {
         contextMenu.addAction("Fermer le tunnel SSH", [this, idx]() {
             emit tunnelStopRequested(store->profiles().at(idx));
             });
     }
     else {
-        contextMenu.addAction("Monter le tunnel SSH", [this, idx]() {
+        QAction* action = contextMenu.addAction("Monter le tunnel SSH", [this, idx]() {
             emit tunnelStartRequested(store->profiles().at(idx));
             });
+
+        if (!canStartTunnel)
+            action->setEnabled(false);
     }
 
     contextMenu.addAction("Ouvrir", [this, idx]() {

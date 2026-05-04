@@ -8,6 +8,7 @@
 #include <QStatusBar>
 #include <QTabBar>
 #include <QDebug>
+#include <QProcess>
 
 ShuttleWindow::ShuttleWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -46,6 +47,8 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	connect(profileList, &ProfileListWidget::profileSelected, this, &ShuttleWindow::openSession);
 	connect(profileList, &ProfileListWidget::profileDeletedRequested, this, &ShuttleWindow::deleteSession);
 	connect(profileList, &ProfileListWidget::profileEditRequested, this, &ShuttleWindow::editSession);
+    connect(profileList, &ProfileListWidget::tunnelStartRequested, this, &ShuttleWindow::startTunnel);
+    connect(profileList, &ProfileListWidget::tunnelStopRequested, this, &ShuttleWindow::stopTunnel);
 
 	connect(m_sftpWidget, &SftpWidget::statusMessage, this, [this](const QString& msg) {
         statusBar()->showMessage(msg);
@@ -195,4 +198,51 @@ void ShuttleWindow::closeTab(int index)
 bool ShuttleWindow::isTunnelConnected(const QString& tunnelName) const
 {
 	return m_tunnels.contains(tunnelName);
+}
+
+void ShuttleWindow::startTunnel(const SessionProfile& profile)
+{
+	if (profile.portTunnel <= 0) return;
+
+    if (m_tunnels.contains(profile.name)) return;
+
+	auto* proc = new QProcess(this);
+
+    QString cmd = "ssh";
+	QStringList args;
+
+    args << "-f" << "-N";
+	args << "-i" << profile.privateKeyPath;
+    args << "-o" << "BatchMode=no";
+	args << "-o" << "UserKnownHostsFile=/dev/null" << "-o" << "StrictHostKeyChecking=no";
+    args << "-L" << QString("%1:127.0.0.1:%1").arg(profile.portTunnel);
+	args << QString("%1@%2").arg(profile.username).arg(profile.host);
+
+    connect(proc, &QProcess::finished, this, [this, profile]() {
+        m_tunnels.remove(profile.name);
+		statusBar()->showMessage("Tunnel fermé : " + profile.name);
+    });
+
+	proc->start(cmd, args);
+
+    if (proc->waitForStarted(2000)) {
+        m_tunnels[profile.name] = proc;
+        statusBar()->showMessage("Tunnel démarré : " + profile.name);
+    } else {
+        proc->deleteLater();
+        statusBar()->showMessage("Échec du tunnel : " + profile.name);
+    }
+}
+
+void ShuttleWindow::stopTunnel(const SessionProfile& profile)
+{
+	if (!m_tunnels.contains(profile.name)) return;
+
+	QProcess* proc = m_tunnels[profile.name];
+	proc->kill();
+	proc->waitForFinished(1000);
+	proc->deleteLater();
+
+	m_tunnels.remove(profile.name);
+	statusBar()->showMessage("Tunnel arrêté : " + profile.name);
 }

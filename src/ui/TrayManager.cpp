@@ -45,8 +45,11 @@ void TrayManager::refreshTunnelMenus(const QList<QPair<QString, bool>>& tunnels)
 
     bool anyConnected = false;
 
-    for (const auto& [name, connected] : tunnels)
+    for (const auto& pair : tunnels)
     {
+        const QString& name = pair.first;
+        bool connected = pair.second;
+
         if (connected)
         {
             anyConnected = true;

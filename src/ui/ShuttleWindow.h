@@ -39,6 +39,8 @@ private slots:
 	void deleteSession(int index);
 	void editSession(const SessionProfile& profile, int index);
 	void closeTab(int index);
+	void startTunnel(const SessionProfile& profile);
+	void stopTunnel(const SessionProfile& profile);
 
 private:
 	QTabWidget* tabs;
