@@ -33,7 +33,6 @@ int main(int argc, char* argv[])
         return 0;
 
     ShuttleWindow w;
-    TrayManager tray(&w);
 
     w.show();
 

@@ -4,7 +4,7 @@
 #include <QAction>
 #include <QApplication>
 
-TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
+TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent), mainWindow(main)
 {
 	tray = new QSystemTrayIcon(QIcon(":/icons/Asset/IconeOFF.png"), this);
 	trayMenu = new QMenu();

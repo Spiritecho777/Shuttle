@@ -7,6 +7,7 @@
 #include "../sftp/SftpWidget.h"
 #include "monitor/MonitorBar.h"
 #include "NewSessionDialog.h"
+#include "TrayManager.h"
 
 #include <QMainWindow>
 #include <QTabWidget>
@@ -54,4 +55,7 @@ private:
 	ProfileListWidget* profileList;
 	SftpWidget* m_sftpWidget = nullptr;
 	MonitorBar* m_monitorBar = nullptr;
+	TrayManager* m_tray = nullptr;
+
+	void refreshTray();
 };

@@ -75,6 +75,19 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 	m_monitorBar = new MonitorBar(this);
 	statusBar()->addPermanentWidget(m_monitorBar, 1);
 	statusBar()->setSizeGripEnabled(false);
+
+	m_tray = new TrayManager(this, this);
+    connect(this, &ShuttleWindow::requestConnect, this, [this](const QString& name) {
+        for (const SessionProfile& p : profileStore->profiles())
+            if (p.name == name) { startTunnel(p); return; }
+        });
+
+    connect(this, &ShuttleWindow::requestDisconnect, this, [this](const QString& name) {
+		for (const SessionProfile& p : profileStore->profiles())
+            if (p.name == name) { stopTunnel(p); return; }
+        });
+
+	refreshTray();
 }
 
 // Profil
@@ -221,6 +234,7 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
     connect(proc, &QProcess::finished, this, [this, profile]() {
         m_tunnels.remove(profile.name);
 		statusBar()->showMessage("Tunnel fermé : " + profile.name);
+        refreshTray();
     });
 
 	proc->start(cmd, args);
@@ -228,9 +242,11 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
     if (proc->waitForStarted(2000)) {
         m_tunnels[profile.name] = proc;
         statusBar()->showMessage("Tunnel démarré : " + profile.name);
+        refreshTray();
     } else {
         proc->deleteLater();
         statusBar()->showMessage("Échec du tunnel : " + profile.name);
+        refreshTray();
     }
 }
 
@@ -245,4 +261,16 @@ void ShuttleWindow::stopTunnel(const SessionProfile& profile)
 
 	m_tunnels.remove(profile.name);
 	statusBar()->showMessage("Tunnel arrêté : " + profile.name);
+    refreshTray();
+}
+
+void ShuttleWindow::refreshTray()
+{
+	QList<QPair<QString, bool>> tunnels;
+    for (const SessionProfile& p : profileStore->profiles()) {
+        if (p.portTunnel > 0 && !p.privateKeyPath.isEmpty()) {
+            tunnels.append({ p.name, m_tunnels.contains(p.name) });
+        }
+	}
+	m_tray->refreshTunnelMenus(tunnels);
 }
