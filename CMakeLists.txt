@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # -------------------------
 # Version appli (unique)
 # -------------------------
-set(APP_VERSION "1.0.0")
+set(APP_VERSION "1.0.1")
 string(REPLACE "." "," APP_VERSION_COMMA "${APP_VERSION}")
 add_definitions(-DAPP_VERSION="${APP_VERSION}")
 
