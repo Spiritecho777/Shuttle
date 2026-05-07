@@ -42,7 +42,9 @@ void MonitorBar::setupUi()
     layout->addWidget(makeSeparator());
 
     // CPU
-    auto* cpuIcon = new QLabel("⚙", this);
+    auto* cpuIcon = new QLabel(this);
+    cpuIcon->setPixmap(style()->standardIcon(QStyle::SP_ComputerIcon)
+        .pixmap(16, 16));
     layout->addWidget(cpuIcon);
     m_cpuLabel = new QLabel("CPU: —", this);
     layout->addWidget(m_cpuLabel);
@@ -50,7 +52,7 @@ void MonitorBar::setupUi()
     layout->addWidget(makeSeparator());
 
     // RAM
-    auto* ramIcon = new QLabel("▣", this);
+    auto* ramIcon = new QLabel("<span style='font-size:20px;'>▣</span>", this);
     layout->addWidget(ramIcon);
     m_ramLabel = new QLabel("RAM: —", this);
     layout->addWidget(m_ramLabel);
@@ -58,7 +60,7 @@ void MonitorBar::setupUi()
     layout->addWidget(makeSeparator());
 
     // Réseau
-    auto* netIcon = new QLabel("⇅", this);
+    auto* netIcon = new QLabel("<span style='font-size:20px;'>⇅</span>",this);
     layout->addWidget(netIcon);
     m_netLabel = new QLabel("↑— ↓—", this);
     layout->addWidget(m_netLabel);
@@ -66,7 +68,9 @@ void MonitorBar::setupUi()
     layout->addWidget(makeSeparator());
 
     // Disques
-    auto* diskIcon = new QLabel("💾", this);
+    auto* diskIcon = new QLabel(this);
+    diskIcon->setPixmap(style()->standardIcon(QStyle::SP_DriveHDIcon)
+        .pixmap(16, 16));
     layout->addWidget(diskIcon);
     m_diskLabel = new QLabel("Disques: —", this);
     layout->addWidget(m_diskLabel);
@@ -74,7 +78,9 @@ void MonitorBar::setupUi()
 	layout->addWidget(makeSeparator());
 
     // Sessions
-    auto* sessIcon = new QLabel("👥", this);
+    auto* sessIcon = new QLabel(this);
+    sessIcon->setPixmap(style()->standardIcon(QStyle::SP_DirHomeIcon)
+        .pixmap(16, 16));
     layout->addWidget(sessIcon);
     m_sessLabel = new QLabel("Sessions: —", this);
 	layout->addWidget(m_sessLabel);
@@ -175,7 +181,10 @@ void MonitorBar::onDataUpdated(const MonitorData& data)
     }
 
     // Sessions
-    m_sessLabel->setText(QString("Sessions:  🖥️%1 👤%2 🔧%3")
+    m_sessLabel->setText(QString("Sessions:  "
+            "<span style='font-size:20px;'>⚇</span>%1 "
+            "<span style='font-size:20px;'>⚉</span>%2 "
+            "<span style='font-size:20px;'>⚙</span>%3")
 		.arg(data.physicalSessions)
         .arg(data.interactiveSessions)
         .arg(data.nonInteractiveSessions));

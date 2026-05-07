@@ -9,6 +9,7 @@
 #include <QTabBar>
 #include <QDebug>
 #include <QProcess>
+#include <QFile>
 
 ShuttleWindow::ShuttleWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -221,21 +222,60 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
 
 	auto* proc = new QProcess(this);
 
+#ifndef _WIN32
+    // Corrige les permissions de la clé si nécessaire
+    QFile keyFile(profile.privateKeyPath);
+    keyFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+#endif
+
     QString cmd = "ssh";
 	QStringList args;
 
-    args << "-f" << "-N";
+    //args << "-f" << "-N";
+    args << "-N";
 	args << "-i" << profile.privateKeyPath;
-    args << "-o" << "BatchMode=no";
-	args << "-o" << "UserKnownHostsFile=/dev/null" << "-o" << "StrictHostKeyChecking=no";
+    args << "-o" << "BatchMode=yes";
+	args << "-o" << "StrictHostKeyChecking=no";
+	args << "-o" << "PasswordAuthentication=no";
+	args << "-o" << "UserKnownHostsFile=/dev/null";
+	args << "-o" << "ExitOnForwardFailure=yes";
+	args << "-o" << "ServerAliveInterval=30";
+	args << "-o" << "ServerAliveCountMax=3";
+	args << "-p" << QString::number(profile.port);
     args << "-L" << QString("%1:127.0.0.1:%1").arg(profile.portTunnel);
 	args << QString("%1@%2").arg(profile.username).arg(profile.host);
 
     connect(proc, &QProcess::finished, this, [this, profile]() {
         m_tunnels.remove(profile.name);
-		statusBar()->showMessage("Tunnel fermé : " + profile.name);
+        statusBar()->showMessage("Tunnel fermé : " + profile.name);
         refreshTray();
-    });
+        });
+
+#ifndef _WIN32
+	QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+	env.insert("SSH_ASKPASS_REQUIRE", "never");
+	proc->setProcessEnvironment(env);
+#endif
+
+    // Connecte stderr pour voir les erreurs
+    connect(proc, &QProcess::readyReadStandardError, this, [proc, this, profile]() {
+        QString err = QString::fromUtf8(proc->readAllStandardError());
+        qDebug() << "SSH tunnel stderr:" << err;
+        });
+
+    connect(proc, &QProcess::started, this, [this, proc, profile]() {
+        m_tunnels[profile.name] = proc;
+        statusBar()->showMessage("Tunnel démarré : " + profile.name);
+        refreshTray();
+        });
+
+    connect(proc, &QProcess::finished, this, [this, profile](int exitCode) {
+        m_tunnels.remove(profile.name);
+        statusBar()->showMessage(exitCode == 0
+            ? "Tunnel fermé : " + profile.name
+            : "Tunnel perdu : " + profile.name);
+        refreshTray();
+        });
 
 	proc->start(cmd, args);
 
