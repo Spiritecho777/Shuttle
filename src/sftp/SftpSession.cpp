@@ -61,6 +61,21 @@ void SftpSession::createDir(const QString& path)
 
 void SftpSession::disconnectSession()
 {
+    m_running = false;
+
+#ifdef _WIN32
+    if (m_sock != INVALID_SOCKET) {
+        closesocket(m_sock);
+        m_sock = INVALID_SOCKET;
+    }
+#else
+    if (m_sock >= 0) {
+        ::shutdown(m_sock, SHUT_RDWR);
+        ::close(m_sock);
+        m_sock = -1;
+    }
+#endif
+
     enqueue({ Command::Quit, {}, {}, false });
 }
 

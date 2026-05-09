@@ -58,39 +58,47 @@ void ProfileListWidget::showContextMenu(const QPoint& pos)
     QMenu contextMenu;
 
     // Capture uniquement l'index
-    int idx = row;
-
-    const SessionProfile& p = store->profiles().at(idx);
+    SessionProfile p = store->profiles().at(row);
 
     bool hasTunnel = (p.portTunnel > 0);
     bool hasKey = !p.privateKeyPath.isEmpty();
-
     bool canStartTunnel = hasTunnel && hasKey;
 
     if (main && main->isTunnelConnected(p.name)) {
-        contextMenu.addAction("Fermer le tunnel SSH", [this, idx]() {
-            emit tunnelStopRequested(store->profiles().at(idx));
+        contextMenu.addAction("Fermer le tunnel SSH", [this, p]() {
+            int idx = store->profiles().indexOf(p);
+            if (idx >= 0)
+                emit tunnelStopRequested(store->profiles().at(idx));
             });
     }
     else {
-        QAction* action = contextMenu.addAction("Monter le tunnel SSH", [this, idx]() {
-            emit tunnelStartRequested(store->profiles().at(idx));
+        QAction* action = contextMenu.addAction("Monter le tunnel SSH", [this, p]() {
+            int idx = store->profiles().indexOf(p);
+            if (idx >= 0) {
+                emit tunnelStartRequested(store->profiles().at(idx));
+            }
             });
 
         if (!canStartTunnel)
             action->setEnabled(false);
     }
 
-    contextMenu.addAction("Ouvrir", [this, idx]() {
-        emit profileSelected(store->profiles().at(idx));
+    contextMenu.addAction("Ouvrir", [this, p]() {
+        int idx = store->profiles().indexOf(p);
+        if (idx >= 0)
+            emit profileSelected(store->profiles().at(idx));
         });
 
-    contextMenu.addAction("Modifier", [this, idx]() {
-        emit profileEditRequested(store->profiles().at(idx), idx);
+    contextMenu.addAction("Modifier", [this, p]() {
+        int idx = store->profiles().indexOf(p);
+        if (idx >= 0)
+            emit profileEditRequested(store->profiles().at(idx), idx);
         });
 
-    contextMenu.addAction("Supprimer", [this, idx]() {
-        emit profileDeletedRequested(idx);
+    contextMenu.addAction("Supprimer", [this, p]() {
+        int idx = store->profiles().indexOf(p);
+        if (idx >= 0)
+            emit profileDeletedRequested(idx);
         });
 
     contextMenu.exec(list->viewport()->mapToGlobal(pos));

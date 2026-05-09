@@ -63,6 +63,8 @@ TerminalWidget::TerminalWidget(QWidget* parent)
 TerminalWidget::~TerminalWidget()
 {
     detachSession();
+    delete m_buffer;
+    m_buffer = nullptr;
 }
 
 // -----------------------------------------------------------------

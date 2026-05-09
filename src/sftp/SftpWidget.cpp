@@ -218,7 +218,7 @@ void SftpWidget::onDownloadProgress(const QString&, qint64 done, qint64 total)
 {
     if (!m_progress->isVisible()) m_progress->setVisible(true);
     if (total > 0) {
-        m_progress->setMaximum(static_cast<int>(total / 1024));
+        m_progress->setMaximum(static_cast<int>(qMin<qint64>(total / 1024, INT_MAX)));
         m_progress->setValue(static_cast<int>(done / 1024));
     }
 }

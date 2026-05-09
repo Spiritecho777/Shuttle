@@ -15,3 +15,16 @@ struct SessionProfile
 	QString passphrase;     // Passphrase de la clé privée (optionnel)
 	AuthMethod authMethod = AuthMethod::Password; // Méthode d'authentification
 };
+
+inline bool operator==(const SessionProfile& a, const SessionProfile& b)
+{
+    return a.name == b.name
+        && a.host == b.host
+        && a.username == b.username
+        && a.port == b.port
+        && a.privateKeyPath == b.privateKeyPath
+        && a.password == b.password
+        && a.portTunnel == b.portTunnel
+        && a.passphrase == b.passphrase
+        && a.authMethod == b.authMethod;
+}
