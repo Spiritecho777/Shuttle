@@ -21,6 +21,8 @@ int SSHSessionManager::openSession(const SessionProfile& profile)
     s->setAuthMethod(profile.privateKeyPath.isEmpty() ? AuthMethod::Password : AuthMethod::PublicKey);
 
 	connect(s, &QThread::finished, s, &QObject::deleteLater);
+	connect(s, &QThread::finished, this, [this, id]() { m_sessions.remove(id); });
+	connect(s, &SSHSession::disconnected, this, [this, id]() { m_sessions.remove(id); });
     connect(s, &SSHSession::connected, this, [this, id]() { emit sessionConnected(id); });
     connect(s, &SSHSession::connectionFailed, this, [this, id](const QString& e) { emit sessionFailed(id, e); });
     connect(s, &SSHSession::disconnected, this, [this, id]() { emit sessionDisconnected(id); });

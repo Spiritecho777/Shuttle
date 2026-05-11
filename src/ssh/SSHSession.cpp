@@ -57,6 +57,7 @@ void SSHSession::disconnectSession()
 
 void SSHSession::writeData(const QByteArray& data)
 {
+	QMutexLocker lock(&m_mutex);
 	if (!channel)
 		return;
 
@@ -216,6 +217,7 @@ void SSHSession::run()
 
 void SSHSession::resizePty(int cols, int rows)
 {
+	QMutexLocker lock(&m_mutex);
 	if (!channel) return;
 	libssh2_channel_request_pty_size(channel, cols, rows);
 }

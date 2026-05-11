@@ -245,45 +245,34 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
     args << "-L" << QString("%1:127.0.0.1:%1").arg(profile.portTunnel);
 	args << QString("%1@%2").arg(profile.username).arg(profile.host);
 
-    connect(proc, &QProcess::finished, this, [this, profile]() {
-        m_tunnels.remove(profile.name);
-        statusBar()->showMessage("Tunnel fermé : " + profile.name);
-        refreshTray();
-        });
-
 #ifndef _WIN32
 	QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 	env.insert("SSH_ASKPASS_REQUIRE", "never");
 	proc->setProcessEnvironment(env);
 #endif
 
-    // Connecte stderr pour voir les erreurs
-    connect(proc, &QProcess::readyReadStandardError, this, [proc, this, profile]() {
-        QString err = QString::fromUtf8(proc->readAllStandardError());
-        qDebug() << "SSH tunnel stderr:" << err;
+    connect(proc, &QProcess::readyReadStandardError, this, [proc]() {
+        qDebug() << "SSH tunnel stderr:" << proc->readAllStandardError();
         });
 
-    connect(proc, &QProcess::started, this, [this, proc, profile]() {
+    connect(proc, &QProcess::started, this, [this, profile, proc]() {
         m_tunnels[profile.name] = proc;
         statusBar()->showMessage("Tunnel démarré : " + profile.name);
         refreshTray();
         });
 
-    connect(proc, &QProcess::finished, this, [this, profile](int exitCode) {
+    connect(proc, &QProcess::finished, this, [this, profile, proc](int exitCode) {
         m_tunnels.remove(profile.name);
         statusBar()->showMessage(exitCode == 0
             ? "Tunnel fermé : " + profile.name
             : "Tunnel perdu : " + profile.name);
+        proc->deleteLater();
         refreshTray();
         });
 
-	proc->start(cmd, args);
+    proc->start(cmd, args);
 
-    if (proc->waitForStarted(2000)) {
-        m_tunnels[profile.name] = proc;
-        statusBar()->showMessage("Tunnel démarré : " + profile.name);
-        refreshTray();
-    } else {
+    if (!proc->waitForStarted(2000)) {
         proc->deleteLater();
         statusBar()->showMessage("Échec du tunnel : " + profile.name);
         refreshTray();

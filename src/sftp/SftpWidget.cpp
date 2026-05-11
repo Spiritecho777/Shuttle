@@ -125,7 +125,7 @@ void SftpWidget::connectTo(const SessionProfile& profile)
     disconnectSession();
 
     m_statusLabel->setText("Connexion SFTP...");
-    m_session = new SftpSession(profile, this);
+    m_session = new SftpSession(profile, nullptr);
 
     connect(m_session, &SftpSession::connected, this, &SftpWidget::onConnected);
     connect(m_session, &SftpSession::connectionFailed, this, &SftpWidget::onConnectionFailed);
