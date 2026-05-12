@@ -135,6 +135,11 @@ void NewSessionDialog::onBrowseKeyClicked()
 
 void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
 {
+    if (index < 0) {
+		qWarning() << "Index de profil invalide pour édition:" << index;
+        return;
+    }
+
 	editMode = true;
     editIndex = index;
 

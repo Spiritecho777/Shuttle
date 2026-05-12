@@ -123,8 +123,13 @@ void MonitorBar::disconnectSession()
     MonitorSession* s = m_session;
     m_session = nullptr;
 
+	s->requestInterruption();
     s->stopMonitor();
-    s->wait(5000);
+    if (!s->wait(5000)) {
+		qWarning() << "MonitorSession ne s'arrête pas aà temps";
+		s->deleteLater();
+		return;
+    }
     delete s;
 
     // Reset affichage
@@ -140,7 +145,8 @@ void MonitorBar::disconnectSession()
 
 void MonitorBar::onDataUpdated(const MonitorData& data)
 {
-    if (!data.valid) return;
+    if (!data.valid || !m_session) return;
+	if (!m_cpuLabel || !m_ramLabel) return;
 
     // CPU — couleur selon charge
     QString cpuColor = data.cpuPercent > 80 ? "#FF0000"   // rouge

@@ -172,6 +172,13 @@ bool SftpSession::initSocket()
     }
 
     if (::connect(m_sock, reinterpret_cast<sockaddr*>(&sin), sizeof(sin)) != 0) {
+#ifdef _WIN32
+        closesocket(m_sock);
+        m_sock = INVALID_SOCKET;
+#else
+        ::close(m_sock);
+        m_sock = -1;
+#endif
         emit connectionFailed("SFTP : connexion refusée");
         return false;
     }

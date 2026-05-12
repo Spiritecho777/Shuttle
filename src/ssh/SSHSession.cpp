@@ -97,6 +97,13 @@ void SSHSession::run()
 #endif
 
 	if (::connect(sock, reinterpret_cast<sockaddr*>(&sin), sizeof(sin)) != 0) {
+#ifdef _WIN32
+		closesocket(sock);
+		sock = INVALID_SOCKET;
+#else
+		::close(sock);
+		sock = -1;
+#endif
 		emit connectionFailed("Impossible de se connecter au serveur");
 		return;
 	}

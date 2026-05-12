@@ -13,7 +13,7 @@
 #include <QMenu>
 
 TerminalWidget::TerminalWidget(QWidget* parent)
-    : QWidget(parent)
+	: QWidget(parent), m_buffer(nullptr), m_parser(nullptr)
 {
     // Police monospace — on cherche dans l'ordre
     m_font = QFont("Courier New", 10);
@@ -30,34 +30,40 @@ TerminalWidget::TerminalWidget(QWidget* parent)
     if (m_cellH <= 0) m_cellH = 16;
 
     // Buffer initial 80x24
-    m_buffer = new TerminalBuffer(m_cols, m_rows);
-    m_parser = new AnsiParser(m_buffer, this);
+    try {
+        m_buffer = new TerminalBuffer(m_cols, m_rows);
+        m_parser = new AnsiParser(m_buffer, this);
 
-    connect(m_parser, &AnsiParser::bufferChanged, this, [this]() {
-        update(); // repaint Qt
-        });
-    connect(m_parser, &AnsiParser::titleChanged,
-        this, &TerminalWidget::titleChanged);
+        connect(m_parser, &AnsiParser::bufferChanged, this, [this]() {
+            update(); // repaint Qt
+            });
+        connect(m_parser, &AnsiParser::titleChanged,
+            this, &TerminalWidget::titleChanged);
 
-    // Curseur clignotant
-    m_blinkTimer = new QTimer(this);
-    m_blinkTimer->setInterval(530);
-    connect(m_blinkTimer, &QTimer::timeout, this, &TerminalWidget::blinkCursor);
-    m_blinkTimer->start();
+        // Curseur clignotant
+        m_blinkTimer = new QTimer(this);
+        m_blinkTimer->setInterval(530);
+        connect(m_blinkTimer, &QTimer::timeout, this, &TerminalWidget::blinkCursor);
+        m_blinkTimer->start();
 
-    // Focus clavier
-    setFocusPolicy(Qt::StrongFocus);
-    setAttribute(Qt::WA_InputMethodEnabled, false);
+        // Focus clavier
+        setFocusPolicy(Qt::StrongFocus);
+        setAttribute(Qt::WA_InputMethodEnabled, false);
 
-    // Fond noir
-    QPalette p = palette();
-    p.setColor(QPalette::Window, Qt::black);
-    setPalette(p);
-    setAutoFillBackground(true);
+        // Fond noir
+        QPalette p = palette();
+        p.setColor(QPalette::Window, Qt::black);
+        setPalette(p);
+        setAutoFillBackground(true);
 
-    // Menu contextuel
-	setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QWidget::customContextMenuRequested, this, &TerminalWidget::showContextMenu);
+        // Menu contextuel
+        setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(this, &QWidget::customContextMenuRequested, this, &TerminalWidget::showContextMenu);
+    }
+    catch (const std::exception&) {
+		delete m_buffer;
+        throw;
+    }
 }
 
 TerminalWidget::~TerminalWidget()
@@ -159,6 +165,8 @@ void TerminalWidget::paintEvent(QPaintEvent*)
 
     int curCol = m_parser->cursorCol();
     int curRow = m_parser->cursorRow();
+
+	if (m_cols <= 0 || m_rows <= 0 || !m_buffer) return;
 
     for (int row = 0; row < m_rows; ++row) {
         for (int col = 0; col < m_cols; ++col) {
@@ -403,6 +411,7 @@ void TerminalWidget::setProfile(const SessionProfile& p)
 
 QPoint TerminalWidget::pixelToCell(const QPoint& px) const
 {
+	if (m_cellW <= 0 || m_cellH <= 0) return { 0, 0 };
     return { px.x() / m_cellW, px.y() / m_cellH };
 }
 
@@ -439,6 +448,12 @@ QString TerminalWidget::selectedText() const
 
 	QPoint start = m_selStart;
 	QPoint end = m_selEnd;
+
+    // Clamp aux limites
+    start.setY(qBound(0, start.y(), m_rows - 1));
+	start.setX(qBound(0, start.x(), m_cols - 1));
+	end.setY(qBound(0, end.y(), m_rows - 1));
+	end.setX(qBound(0, end.x(), m_cols - 1));
 
     if (start.y() > end.y() || (start.y() == end.y() && start.x() > end.x())) {
         std::swap(start, end);

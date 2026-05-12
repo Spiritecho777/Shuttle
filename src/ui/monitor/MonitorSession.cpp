@@ -28,7 +28,6 @@ MonitorSession::MonitorSession(const SessionProfile& profile, QObject* parent)
 MonitorSession::~MonitorSession()
 {
     stopMonitor();
-    wait(3000);
 }
 
 void MonitorSession::stopMonitor()
@@ -54,23 +53,28 @@ void MonitorSession::run()
         return;
     }
 
-    // Boucle de polling toutes les 2 secondes
-    while (m_running.load() && !isInterruptionRequested()) {
+    try{
+        // Boucle de polling toutes les 2 secondes
+        while (m_running.load() && !isInterruptionRequested()) {
 
-        QByteArray raw = execCommand(kCollectCmd);
+            QByteArray raw = execCommand(kCollectCmd);
 
-        if (raw.isEmpty()) {
-            // Connexion perdue — on arrête
-            break;
+            if (raw.isEmpty()) {
+                // Connexion perdue — on arrête
+                break;
+            }
+
+            MonitorData data = parseOutput(raw);
+            data.valid = true;
+            emit dataUpdated(data);
+
+            // Attente 2s interruptible
+            for (int i = 0; i < 20 && m_running.load(); ++i)
+                msleep(100);
         }
-
-        MonitorData data = parseOutput(raw);
-        data.valid = true;
-        emit dataUpdated(data);
-
-        // Attente 2s interruptible
-        for (int i = 0; i < 20 && m_running.load(); ++i)
-            msleep(100);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "MonitorSession exception:" << e.what();
     }
 
     cleanup();
@@ -324,7 +328,9 @@ bool MonitorSession::initSocket()
     }
 
     if (::connect(m_sock, reinterpret_cast<sockaddr*>(&sin), sizeof(sin)) != 0) {
-        emit connectionFailed("Monitor : connexion refusée");
+        QMetaObject::invokeMethod(this, "connectionFailed",
+            Qt::QueuedConnection,
+            Q_ARG(QString, "Monitor : connexion refusée"));
         return false;
     }
 

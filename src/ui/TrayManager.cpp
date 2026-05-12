@@ -54,14 +54,14 @@ void TrayManager::refreshTunnelMenus(const QList<QPair<QString, bool>>& tunnels)
         {
             anyConnected = true;
             QAction* action = menuDisconnect->addAction(name);
-            connect(action, &QAction::triggered, [this, name]() {
+            connect(action, &QAction::triggered, this, [this, name]() {
                 emit mainWindow->requestDisconnect(name);
                 });
         }
         else
         {
             QAction* action = menuConnect->addAction(name);
-            connect(action, &QAction::triggered, [this, name]() {
+            connect(action, &QAction::triggered, this, [this, name]() {
                 emit mainWindow->requestConnect(name);
                 });
         }

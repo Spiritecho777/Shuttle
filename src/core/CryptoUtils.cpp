@@ -31,21 +31,27 @@ QByteArray CryptoUtils::deriveKey(const QByteArray& password, const QByteArray& 
     QByteArray key;
     key.resize(keySize);
 
-    int ok = PKCS5_PBKDF2_HMAC(
-        password.constData(),
-        password.size(),
-        reinterpret_cast<const unsigned char*>(salt.constData()),
-        salt.size(),
-        iterations,
-        EVP_sha256(),
-        keySize,
-        reinterpret_cast<unsigned char*>(key.data())
-    );
+    try {
+        int ok = PKCS5_PBKDF2_HMAC(
+            password.constData(),
+            password.size(),
+            reinterpret_cast<const unsigned char*>(salt.constData()),
+            salt.size(),
+            iterations,
+            EVP_sha256(),
+            keySize,
+            reinterpret_cast<unsigned char*>(key.data())
+        );
 
-    if (!ok) {
-        secureWipe(key);
-        return{};
+        if (!ok) {
+            secureWipe(key);
+            return{};
+        }
     }
+    catch (...) {
+        secureWipe(key);
+        throw;
+	}
 
     return key;
 }
@@ -81,15 +87,18 @@ QByteArray CryptoUtils::encryptBytes(const QByteArray& plain) const
         return {};
     }
 
+	int block = EVP_CIPHER_CTX_block_size(ctx);
     QByteArray buffer;
-    buffer.resize(plain.size() + 32);
+    buffer.resize(plain.size() + block);
 
     int outLen = 0;
+
     if (EVP_EncryptUpdate(ctx,
         reinterpret_cast<unsigned char*>(buffer.data()),
         &outLen,
         reinterpret_cast<const unsigned char*>(plain.data()),
-        plain.size()) != 1) {
+        plain.size()) != 1) 
+    {
         secureWipe(key);
         secureWipe(buffer);
         EVP_CIPHER_CTX_free(ctx);
@@ -101,7 +110,8 @@ QByteArray CryptoUtils::encryptBytes(const QByteArray& plain) const
     int finalLen = 0;
     if (EVP_EncryptFinal_ex(ctx,
         reinterpret_cast<unsigned char*>(buffer.data()),
-        &finalLen) != 1) {
+        &finalLen) != 1) 
+    {
         secureWipe(key);
         secureWipe(buffer);
         EVP_CIPHER_CTX_free(ctx);
