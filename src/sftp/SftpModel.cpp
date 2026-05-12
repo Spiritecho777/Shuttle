@@ -94,10 +94,10 @@ QVariant SftpModel::headerData(int section, Qt::Orientation orientation, int rol
         return {};
 
     switch (section) {
-    case 0: return "Nom";
-    case 1: return "Taille";
-    case 2: return "Modifié";
-    case 3: return "Permissions";
+    case 0: return tr("Nom");
+    case 1: return tr("Taille");
+    case 2: return tr("Modifié");
+    case 3: return tr("Permissions");
     }
     return {};
 }

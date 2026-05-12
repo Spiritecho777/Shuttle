@@ -12,7 +12,7 @@
 NewSessionDialog::NewSessionDialog(QWidget* parent)
 	: QDialog(parent)
 {
-	this->setWindowTitle("Nouvelle session SSH");
+	this->setWindowTitle(tr("Nouvelle session SSH"));
 	this->resize(400, 300);
 
     nameEdit = new QLineEdit(this);
@@ -35,8 +35,8 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
 	portTunnelSpin->setRange(0, 65535);
 	portTunnelSpin->setValue(0);
 
-    createBtn = new QPushButton("Créer", this);
-    cancelBtn = new QPushButton("Annuler", this);
+    createBtn = new QPushButton(tr("Créer"), this);
+    cancelBtn = new QPushButton(tr("Annuler"), this);
 
 	connect(browseKeyBtn, &QPushButton::clicked, this, &NewSessionDialog::onBrowseKeyClicked);
     connect(createBtn, &QPushButton::clicked, this, &NewSessionDialog::onCreateClicked);
@@ -52,14 +52,14 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
 	keyLayout->addWidget(browseKeyBtn);
 
     QFormLayout* form = new QFormLayout();
-    form->addRow("Nom du profil :", nameEdit);
-    form->addRow("Hôte :", hostEdit);
-    form->addRow("Utilisateur :", userEdit);
-    form->addRow("Port :", portSpin);
-    form->addRow("Clé privée :", keyLayout);
-    form->addRow("Mot de passe :", passwordEdit);
-    form->addRow("Passphrase :", passphraseEdit);
-    form->addRow("Port du tunnel :", portTunnelSpin);
+    form->addRow(tr("Nom du profil :"), nameEdit);
+    form->addRow(tr("Hôte :"), hostEdit);
+    form->addRow(tr("Utilisateur :"), userEdit);
+    form->addRow(tr("Port :"), portSpin);
+    form->addRow(tr("Clé privée :"), keyLayout);
+    form->addRow(tr("Mot de passe :"), passwordEdit);
+    form->addRow(tr("Passphrase :"), passphraseEdit);
+    form->addRow(tr("Port du tunnel :"), portTunnelSpin);
 
     QHBoxLayout* buttons = new QHBoxLayout();
     buttons->addStretch();
@@ -78,12 +78,12 @@ NewSessionDialog::NewSessionDialog(QWidget* parent)
 void NewSessionDialog::onCreateClicked()
 {
     if (nameEdit->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le nom du profil est obligatoire.");
+        QMessageBox::warning(this, tr("Erreur"), tr("Le nom du profil est obligatoire."));
         return;
     }
 
     if (hostEdit->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le champ Hôte est obligatoire.");
+        QMessageBox::warning(this, tr("Erreur"), tr("Le champ Hôte est obligatoire."));
         return;
     }
 
@@ -94,12 +94,12 @@ void NewSessionDialog::onCreateClicked()
 
     if (tunnelEnabled) {
         if (!hasUser) {
-            QMessageBox::warning(this, "Erreur", "Un nom d'utilisateur est obligatoire pour un tunnel SSH.");
+            QMessageBox::warning(this, tr("Erreur"), tr("Un nom d'utilisateur est obligatoire pour un tunnel SSH."));
             return;
         }
 
         if (!hasKey && !hasPassword) {
-            QMessageBox::warning(this, "Erreur", "Une clé privée ou un mot de passe est obligatoire pour un tunnel SSH.");
+            QMessageBox::warning(this, tr("Erreur"), tr("Une clé privée ou un mot de passe est obligatoire pour un tunnel SSH."));
             return;
         }
     }
@@ -126,7 +126,7 @@ void NewSessionDialog::onCreateClicked()
 
 void NewSessionDialog::onBrowseKeyClicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, "Sélectionner une clé privée", QString(), "Clés privées (*.key *.pem *.ppk);;Tous les fichiers (*)");
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Sélectionner une clé privée"), QString(), tr("Clés privées (*.key *.pem *.ppk);;Tous les fichiers (*)"));
 
     if (!filePath.isEmpty()) {
         keyPathEdit->setText(filePath);
@@ -136,7 +136,7 @@ void NewSessionDialog::onBrowseKeyClicked()
 void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
 {
     if (index < 0) {
-		qWarning() << "Index de profil invalide pour édition:" << index;
+		qWarning() << tr("Index de profil invalide pour édition:") << index;
         return;
     }
 
@@ -152,8 +152,8 @@ void NewSessionDialog::loadProfile(const SessionProfile& profile, int index)
     passphraseEdit->setText(profile.passphrase);
 	portTunnelSpin->setValue(profile.portTunnel);
 
-	setWindowTitle("Modifier le profil");
-    createBtn->setText("Enregistrer");
+	setWindowTitle(tr("Modifier le profil"));
+    createBtn->setText(tr("Enregistrer"));
 }
 
 void NewSessionDialog::updateAuthFields()

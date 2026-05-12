@@ -14,8 +14,8 @@ bool LockManager::acquire()
     lock.setStaleLockTime(0);
 
     if (!lock.tryLock()) {
-        QMessageBox::warning(nullptr, "Instance déjà ouverte",
-            "Shuttle est déjà en cours d'exécution.");
+        QMessageBox::warning(nullptr, QObject::tr("Instance déjà ouverte"),
+            QObject::tr("Shuttle est déjà en cours d'exécution."));
 
         return false;
     }

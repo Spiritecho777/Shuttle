@@ -76,7 +76,7 @@ void SSHSession::run()
 #else
 	if (sock < 0) {
 #endif
-		emit connectionFailed("Impossible de créer le socket");
+		emit connectionFailed(tr("Impossible de créer le socket"));
 		return;
 	}
 
@@ -86,12 +86,12 @@ void SSHSession::run()
 
 #ifdef _WIN32
 	if (InetPtonA(AF_INET, host.toUtf8().constData(), &sin.sin_addr) != 1) {
-		emit connectionFailed("Adresse IP invalide : " + host);
+		emit connectionFailed(tr("Adresse IP invalide : %1").arg(host));
 		return;
 	}
 #else
 	if (inet_pton(AF_INET, host.toUtf8().constData(), &sin.sin_addr) != 1) {
-		emit connectionFailed("Adresse IP invalide : " + host);
+		emit connectionFailed(tr("Adresse IP invalide : %1").arg(host));
 		return;
 	}
 #endif
@@ -104,19 +104,19 @@ void SSHSession::run()
 		::close(sock);
 		sock = -1;
 #endif
-		emit connectionFailed("Impossible de se connecter au serveur");
+		emit connectionFailed(tr("Impossible de se connecter au serveur"));
 		return;
 	}
 
 	// --- Session SSH ---
 	session = libssh2_session_init();
 	if (!session) {
-		emit connectionFailed("Impossible d'initialiser la session SSH");
+		emit connectionFailed(tr("Impossible d'initialiser la session SSH"));
 		return;
 	}
 
 	if (libssh2_session_handshake(session, sock)) {
-		emit connectionFailed("Handshake SSH échoué");
+		emit connectionFailed(tr("Handshake SSH échoué"));
 		return;
 	}
 
@@ -149,7 +149,7 @@ void SSHSession::run()
 	if (rc != 0) {
 		char* errmsg = nullptr;
 		libssh2_session_last_error(session, &errmsg, nullptr, 0);
-		emit connectionFailed(QString("Authentification échouée : %1").arg(errmsg));
+		emit connectionFailed(QString(tr("Authentification échouée : %1").arg(errmsg)));
 		return;
 	}
 
@@ -164,7 +164,7 @@ void SSHSession::run()
 			if (err == LIBSSH2_ERROR_EAGAIN) { msleep(10); continue; }
 			char* errmsg = nullptr;
 			libssh2_session_last_error(session, &errmsg, nullptr, 0);
-			emit connectionFailed(QString("Impossible d'ouvrir un canal SSH : %1").arg(errmsg));
+			emit connectionFailed(QString(tr("Impossible d'ouvrir un canal SSH : %1").arg(errmsg)));
 			return;
 		}
 	} while (!ch);
@@ -178,7 +178,7 @@ void SSHSession::run()
 	if (rc != 0) {
 		char* errmsg = nullptr;
 		libssh2_session_last_error(session, &errmsg, nullptr, 0);
-		emit connectionFailed(QString("Impossible de demander un PTY : %1").arg(errmsg));
+		emit connectionFailed(QString(tr("Impossible de demander un PTY : %1").arg(errmsg)));
 		return;
 	}
 
@@ -190,7 +190,7 @@ void SSHSession::run()
 	if (rc != 0) {
 		char* errmsg = nullptr;
 		libssh2_session_last_error(session, &errmsg, nullptr, 0);
-		emit connectionFailed(QString("Impossible de lancer le shell : %1").arg(errmsg));
+		emit connectionFailed(QString(tr("Impossible de lancer le shell : %1").arg(errmsg)));
 		return;
 	}
 

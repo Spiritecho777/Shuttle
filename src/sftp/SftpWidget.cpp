@@ -35,32 +35,32 @@ void SftpWidget::setupUi()
     m_toolbar->setIconSize(QSize(16, 16));
 
     m_actUp = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_ArrowUp), "Dossier parent");
+        style()->standardIcon(QStyle::SP_ArrowUp), tr("Dossier parent"));
     m_actRefresh = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_BrowserReload), "Actualiser");
+        style()->standardIcon(QStyle::SP_BrowserReload), tr("Actualiser"));
 
     m_toolbar->addSeparator();
 
     m_actDownload = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_ArrowDown), "Télécharger");
+        style()->standardIcon(QStyle::SP_ArrowDown), tr("Télécharger"));
     m_actUpload = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_ArrowUp), "Envoyer");
+        style()->standardIcon(QStyle::SP_ArrowUp), tr("Envoyer"));
 
     m_toolbar->addSeparator();
 
     m_actNewFolder = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_FileDialogNewFolder), "Nouveau dossier");
+        style()->standardIcon(QStyle::SP_FileDialogNewFolder), tr("Nouveau dossier"));
     m_actRename = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_FileIcon), "Renommer");
+        style()->standardIcon(QStyle::SP_FileIcon), tr("Renommer"));
     m_actDelete = m_toolbar->addAction(
-        style()->standardIcon(QStyle::SP_TrashIcon), "Supprimer");
+        style()->standardIcon(QStyle::SP_TrashIcon), tr("Supprimer"));
 
     layout->addWidget(m_toolbar);
 
     // --- Barre de chemin ---
     m_pathEdit = new QLineEdit(this);
-    m_pathEdit->setPlaceholderText("Chemin distant...");
-    m_pathEdit->setFont(QFont("Courier New", 9));
+    m_pathEdit->setPlaceholderText(tr("Chemin distant..."));
+    m_pathEdit->setFont(QFont(tr("Courier New"), 9));
     layout->addWidget(m_pathEdit);
 
     // --- Vue fichiers ---
@@ -87,7 +87,7 @@ void SftpWidget::setupUi()
     layout->addWidget(m_progress);
 
     // --- Status ---
-    m_statusLabel = new QLabel("Non connecté", this);
+    m_statusLabel = new QLabel(tr("Non connecté"), this);
     m_statusLabel->setContentsMargins(4, 2, 4, 2);
     layout->addWidget(m_statusLabel);
 
@@ -124,7 +124,7 @@ void SftpWidget::connectTo(const SessionProfile& profile)
 {
     disconnectSession();
 
-    m_statusLabel->setText("Connexion SFTP...");
+    m_statusLabel->setText(tr("Connexion SFTP..."));
     m_session = new SftpSession(profile, nullptr);
 
     connect(m_session, &SftpSession::connected, this, &SftpWidget::onConnected);
@@ -152,7 +152,7 @@ void SftpWidget::disconnectSession()
     delete s;
     m_connected = false;
 
-    m_statusLabel->setText("Non connecté");
+    m_statusLabel->setText(tr("Non connecté"));
     m_view->setEnabled(false);
     m_pathEdit->setEnabled(false);
 }
@@ -164,7 +164,7 @@ void SftpWidget::disconnectSession()
 void SftpWidget::onConnected()
 {
     m_connected = true;
-    m_statusLabel->setText("Connecté");
+    m_statusLabel->setText(tr("Connecté"));
 
     m_view->setEnabled(true);
     m_pathEdit->setEnabled(true);
@@ -182,14 +182,14 @@ void SftpWidget::onConnected()
 
 void SftpWidget::onConnectionFailed(const QString& error)
 {
-    m_statusLabel->setText("Erreur : " + error);
-    emit statusMessage("SFTP : " + error);
+    m_statusLabel->setText(tr("Erreur : %1").arg(error));
+    emit statusMessage(tr("SFTP : %1").arg(error));
 }
 
 void SftpWidget::onDisconnected()
 {
     m_connected = false;
-    m_statusLabel->setText("Déconnecté");
+    m_statusLabel->setText(tr("Déconnecté"));
     m_view->setEnabled(false);
     m_pathEdit->setEnabled(false);
 }
@@ -199,12 +199,12 @@ void SftpWidget::onDirListed(const QString& path, const QList<SftpEntry>& entrie
     m_currentPath = path;
     m_pathEdit->setText(path);
     m_model->setEntries(path, entries);
-    m_statusLabel->setText(QString("%1 éléments").arg(entries.size()));
+    m_statusLabel->setText(tr("%1 éléments").arg(entries.size()));
 }
 
 void SftpWidget::onOperationError(const QString& msg)
 {
-    m_statusLabel->setText("Erreur : " + msg);
+    m_statusLabel->setText(tr("Erreur : %1").arg(msg));
     emit statusMessage(msg);
 }
 
@@ -231,13 +231,13 @@ void SftpWidget::onUploadProgress(const QString&, qint64 done, qint64 total)
 void SftpWidget::onDownloadFinished(const QString& path)
 {
     m_progress->setVisible(false);
-    m_statusLabel->setText("Téléchargé : " + QFileInfo(path).fileName());
+    m_statusLabel->setText(tr("Téléchargé : %1").arg(QFileInfo(path).fileName()));
 }
 
 void SftpWidget::onUploadFinished(const QString& path)
 {
     m_progress->setVisible(false);
-    m_statusLabel->setText("Envoyé : " + QFileInfo(path).fileName());
+    m_statusLabel->setText(tr("Envoyé : %1").arg(QFileInfo(path).fileName()));
     refresh();
 }
 
@@ -248,7 +248,7 @@ void SftpWidget::onUploadFinished(const QString& path)
 void SftpWidget::navigateTo(const QString& path)
 {
     if (!m_connected || !m_session) return;
-    m_statusLabel->setText("Chargement...");
+    m_statusLabel->setText(tr("Chargement..."));
     m_session->listDir(path);
 }
 
@@ -305,17 +305,17 @@ void SftpWidget::actionDownload()
     if (e.name.isEmpty() || e.isDir) return;
 
     QString localPath = QFileDialog::getSaveFileName(
-        this, "Enregistrer sous", e.name);
+        this, tr("Enregistrer sous"), e.name);
     if (localPath.isEmpty()) return;
 
-    m_statusLabel->setText("Téléchargement : " + e.name);
+    m_statusLabel->setText(tr("Téléchargement : %1").arg(e.name));
     m_session->downloadFile(e.fullPath, localPath);
 }
 
 void SftpWidget::actionUpload()
 {
     QStringList files = QFileDialog::getOpenFileNames(
-        this, "Choisir les fichiers à envoyer");
+        this, tr("Choisir les fichiers à envoyer"));
     if (files.isEmpty()) return;
 
     for (const QString& localPath : files) {
@@ -323,7 +323,7 @@ void SftpWidget::actionUpload()
         if (!remotePath.endsWith('/')) remotePath += '/';
         remotePath += QFileInfo(localPath).fileName();
 
-        m_statusLabel->setText("Envoi : " + QFileInfo(localPath).fileName());
+        m_statusLabel->setText(tr("Envoi : %1").arg(QFileInfo(localPath).fileName()));
         m_session->uploadFile(localPath, remotePath);
     }
 }
@@ -335,7 +335,7 @@ void SftpWidget::actionRename()
 
     bool ok;
     QString newName = QInputDialog::getText(
-        this, "Renommer", "Nouveau nom :", QLineEdit::Normal, e.name, &ok);
+        this, tr("Renommer"), tr("Nouveau nom :"), QLineEdit::Normal, e.name, &ok);
     if (!ok || newName.isEmpty() || newName == e.name) return;
 
     QString newPath = m_currentPath;
@@ -351,8 +351,8 @@ void SftpWidget::actionDelete()
     if (e.name.isEmpty()) return;
 
     int ret = QMessageBox::question(
-        this, "Supprimer",
-        QString("Supprimer \"%1\" ?").arg(e.name),
+        this, tr("Supprimer"),
+        tr("Supprimer \"%1\" ?").arg(e.name),
         QMessageBox::Yes | QMessageBox::No);
 
     if (ret != QMessageBox::Yes) return;
@@ -364,7 +364,7 @@ void SftpWidget::actionNewFolder()
 {
     bool ok;
     QString name = QInputDialog::getText(
-        this, "Nouveau dossier", "Nom du dossier :", QLineEdit::Normal, "", &ok);
+        this, tr("Nouveau dossier"), tr("Nom du dossier :"), QLineEdit::Normal, "", &ok);
     if (!ok || name.isEmpty()) return;
 
     QString path = m_currentPath;
@@ -385,16 +385,16 @@ void SftpWidget::onContextMenu(const QPoint& pos)
 
     if (!e.name.isEmpty()) {
         if (!e.isDir)
-            menu.addAction("Télécharger", this, &SftpWidget::actionDownload);
-        menu.addAction("Renommer", this, &SftpWidget::actionRename);
-        menu.addAction("Supprimer", this, &SftpWidget::actionDelete);
+            menu.addAction(tr("Télécharger"), this, &SftpWidget::actionDownload);
+        menu.addAction(tr("Renommer"), this, &SftpWidget::actionRename);
+        menu.addAction(tr("Supprimer"), this, &SftpWidget::actionDelete);
         menu.addSeparator();
     }
 
-    menu.addAction("Envoyer un fichier", this, &SftpWidget::actionUpload);
-    menu.addAction("Nouveau dossier", this, &SftpWidget::actionNewFolder);
+    menu.addAction(tr("Envoyer un fichier"), this, &SftpWidget::actionUpload);
+    menu.addAction(tr("Nouveau dossier"), this, &SftpWidget::actionNewFolder);
     menu.addSeparator();
-    menu.addAction("Actualiser", this, &SftpWidget::refresh);
+    menu.addAction(tr("Actualiser"), this, &SftpWidget::refresh);
 
     menu.exec(m_view->viewport()->mapToGlobal(pos));
 }

@@ -154,7 +154,7 @@ bool SftpSession::initSocket()
 #else
     if (m_sock < 0) {
 #endif
-        emit connectionFailed("SFTP : impossible de créer le socket");
+        emit connectionFailed(tr("SFTP : impossible de créer le socket"));
         return false;
     }
 
@@ -167,7 +167,7 @@ bool SftpSession::initSocket()
 #else
     if (inet_pton(AF_INET, m_profile.host.toUtf8().constData(), &sin.sin_addr) != 1) {
 #endif
-        emit connectionFailed("SFTP : adresse IP invalide");
+        emit connectionFailed(tr("SFTP : adresse IP invalide"));
         return false;
     }
 
@@ -179,7 +179,7 @@ bool SftpSession::initSocket()
         ::close(m_sock);
         m_sock = -1;
 #endif
-        emit connectionFailed("SFTP : connexion refusée");
+        emit connectionFailed(tr("SFTP : connexion refusée"));
         return false;
     }
 
@@ -190,14 +190,14 @@ bool SftpSession::initSsh()
 {
     m_session = libssh2_session_init();
     if (!m_session) {
-        emit connectionFailed("SFTP : impossible d'initialiser la session SSH");
+        emit connectionFailed(tr("SFTP : impossible d'initialiser la session SSH"));
         return false;
     }
 
     libssh2_session_set_blocking(m_session, 1);
 
     if (libssh2_session_handshake(m_session, m_sock) != 0) {
-        emit connectionFailed("SFTP : handshake SSH échoué");
+        emit connectionFailed(tr("SFTP : handshake SSH échoué"));
         return false;
     }
 
@@ -224,7 +224,7 @@ bool SftpSession::initSsh()
     if (rc != 0) {
         char* errmsg = nullptr;
         libssh2_session_last_error(m_session, &errmsg, nullptr, 0);
-        emit connectionFailed(QString("SFTP : auth échouée : %1").arg(errmsg));
+        emit connectionFailed(tr("SFTP : auth échouée : %1").arg(errmsg));
         return false;
     }
 
@@ -237,7 +237,7 @@ bool SftpSession::initSftp()
     if (!m_sftp) {
         char* errmsg = nullptr;
         libssh2_session_last_error(m_session, &errmsg, nullptr, 0);
-        emit connectionFailed(QString("SFTP : impossible d'initialiser SFTP : %1").arg(errmsg));
+        emit connectionFailed(tr("SFTP : impossible d'initialiser SFTP : %1").arg(errmsg));
         return false;
     }
 
@@ -283,7 +283,7 @@ void SftpSession::doListDir(const QString & path)
 
     LIBSSH2_SFTP_HANDLE* handle = libssh2_sftp_opendir(m_sftp, pathUtf8.constData());
     if (!handle) {
-        emit operationError(QString("Impossible d'ouvrir : %1").arg(path));
+        emit operationError(tr("Impossible d'ouvrir : %1").arg(path));
         return;
     }
 
@@ -331,7 +331,7 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
     );
 
     if (!handle) {
-        emit operationError(QString("Impossible d'ouvrir en lecture : %1").arg(remotePath));
+        emit operationError(tr("Impossible d'ouvrir en lecture : %1").arg(remotePath));
         return;
     }
 
@@ -343,7 +343,7 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
     QFile localFile(localPath);
     if (!localFile.open(QIODevice::WriteOnly)) {
         libssh2_sftp_close(handle);
-        emit operationError(QString("Impossible de créer le fichier local : %1").arg(localPath));
+        emit operationError(tr("Impossible de créer le fichier local : %1").arg(localPath));
         return;
     }
 
@@ -362,7 +362,7 @@ void SftpSession::doDownload(const QString & remotePath, const QString & localPa
     libssh2_sftp_close(handle);
 
     if (nread < 0) {
-        emit operationError(QString("Erreur lecture SFTP : %1").arg(remotePath));
+        emit operationError(tr("Erreur lecture SFTP : %1").arg(remotePath));
         return;
     }
 
@@ -373,7 +373,7 @@ void SftpSession::doUpload(const QString& localPath, const QString& remotePath)
 {
     QFile localFile(localPath);
     if (!localFile.open(QIODevice::ReadOnly)) {
-        emit operationError(QString("Impossible d'ouvrir le fichier local : %1").arg(localPath));
+        emit operationError(tr("Impossible d'ouvrir le fichier local : %1").arg(localPath));
         return;
     }
 
@@ -389,7 +389,7 @@ void SftpSession::doUpload(const QString& localPath, const QString& remotePath)
 
     if (!handle) {
         localFile.close();
-        emit operationError(QString("Impossible de créer le fichier distant : %1").arg(remotePath));
+        emit operationError(tr("Impossible de créer le fichier distant : %1").arg(remotePath));
         return;
     }
 
@@ -405,7 +405,7 @@ void SftpSession::doUpload(const QString& localPath, const QString& remotePath)
             if (nwritten < 0) {
                 localFile.close();
                 libssh2_sftp_close(handle);
-                emit operationError(QString("Erreur écriture SFTP : %1").arg(remotePath));
+                emit operationError(tr("Erreur écriture SFTP : %1").arg(remotePath));
                 return;
             }
             ptr += nwritten;
@@ -432,9 +432,9 @@ void SftpSession::doRename(const QString & oldPath, const QString & newPath)
     );
 
     if (rc != 0)
-        emit operationError(QString("Impossible de renommer : %1").arg(oldPath));
+        emit operationError(tr("Impossible de renommer : %1").arg(oldPath));
     else
-        emit operationSuccess(QString("Renommé : %1 → %2").arg(oldPath, newPath));
+        emit operationSuccess(tr("Renommé : %1 → %2").arg(oldPath, newPath));
 }
 
 void SftpSession::doDelete(const QString & path, bool isDir)
@@ -448,9 +448,9 @@ void SftpSession::doDelete(const QString & path, bool isDir)
         rc = libssh2_sftp_unlink(m_sftp, pathUtf8.constData());
 
     if (rc != 0)
-        emit operationError(QString("Impossible de supprimer : %1").arg(path));
+        emit operationError(tr("Impossible de supprimer : %1").arg(path));
     else
-        emit operationSuccess(QString("Supprimé : %1").arg(path));
+        emit operationSuccess(tr("Supprimé : %1").arg(path));
 }
 
 void SftpSession::doCreateDir(const QString & path)
@@ -464,7 +464,7 @@ void SftpSession::doCreateDir(const QString & path)
     );
 
     if (rc != 0)
-        emit operationError(QString("Impossible de créer le dossier : %1").arg(path));
+        emit operationError(tr("Impossible de créer le dossier : %1").arg(path));
     else
-        emit operationSuccess(QString("Dossier créé : %1").arg(path));
+        emit operationSuccess(tr("Dossier créé : %1").arg(path));
 }

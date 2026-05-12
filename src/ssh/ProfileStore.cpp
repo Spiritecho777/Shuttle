@@ -80,10 +80,10 @@ void ProfileStore::handleCorruptedFile(const QString& path)
 {
 	QFile::remove(path);
 	QMessageBox::warning(nullptr,
-		"Profils corrompus",
-		"Le fichier de profils était corrompu ou dans un format obsolète.\n"
+		tr("Profils corrompus"),
+		tr("Le fichier de profils était corrompu ou dans un format obsolète.\n"
 		"Il a été supprimé automatiquement.\n\n"
-		"Vos profils SSH doivent être recréés.");
+		"Vos profils SSH doivent être recréés."));
 }
 
 void ProfileStore::save() const

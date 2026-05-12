@@ -31,7 +31,7 @@ public:
 
 signals:
 	void requestConnect(const QString& tunnelName);
-	void requestDisconnect(const QString& tunnelName); //Systray on s'en occupe après
+	void requestDisconnect(const QString& tunnelName);
 
 private slots:
 	void openNewProfileDialog();

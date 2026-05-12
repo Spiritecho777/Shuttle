@@ -23,14 +23,14 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 
     homeTab = new HomeTab();
 	profileStore = new ProfileStore(this);
-	tabs->addTab(homeTab, "Accueil");
+	tabs->addTab(homeTab, tr("Accueil"));
 	tabs->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr); // Empêche la fermeture de l'onglet d'accueil
 	tabs->tabBar()->setTabButton(0, QTabBar::LeftSide, nullptr); // Empêche la fermeture de l'onglet d'accueil
 
     connect(homeTab, &HomeTab::newSessionRequested, this, &ShuttleWindow::openNewProfileDialog);
 
     // --- Dock latéral : profils SSH ---
-    profileDock = new QDockWidget("Profils SSH", this);
+    profileDock = new QDockWidget(tr("Profils SSH"), this);
     profileDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     profileList = new ProfileListWidget(profileStore, this);
     profileDock->setWidget(profileList);
@@ -119,7 +119,7 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
     // --- Session fermée côté serveur ---
     connect(terminal, &TerminalWidget::sessionClosed, this, [this, terminal]() {
         int i = tabs->indexOf(terminal);
-        if (i >= 0) tabs->setTabText(i, tabs->tabText(i) + " [fermé]");
+        if (i >= 0) tabs->setTabText(i, tabs->tabText(i) + tr(" [fermé]"));
 
 		//Déconnecte le SFTP si c'était la session active
         if (m_sftpWidget->isConnected()) {
@@ -131,10 +131,10 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
 
     // --- Statut ---
     connect(session, &SSHSession::connected, this, [this, profile]() {
-        statusBar()->showMessage("Connecté : " + profile.name);
+        statusBar()->showMessage(tr("Connecté : ") + profile.name);
         });
     connect(session, &SSHSession::connectionFailed, this, [this](const QString& err) {
-        statusBar()->showMessage("Erreur : " + err);
+        statusBar()->showMessage(tr("Erreur : ") + err);
         });
 
     // --- Attache et lance ---
@@ -257,15 +257,15 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
 
     connect(proc, &QProcess::started, this, [this, profile, proc]() {
         m_tunnels[profile.name] = proc;
-        statusBar()->showMessage("Tunnel démarré : " + profile.name);
+        statusBar()->showMessage(tr("Tunnel démarré : ") + profile.name);
         refreshTray();
         });
 
     connect(proc, &QProcess::finished, this, [this, profile, proc](int exitCode) {
         m_tunnels.remove(profile.name);
         statusBar()->showMessage(exitCode == 0
-            ? "Tunnel fermé : " + profile.name
-            : "Tunnel perdu : " + profile.name);
+            ? tr("Tunnel fermé : ") + profile.name
+            : tr("Tunnel perdu : ") + profile.name);
         proc->deleteLater();
         refreshTray();
         });
@@ -274,7 +274,7 @@ void ShuttleWindow::startTunnel(const SessionProfile& profile)
 
     if (!proc->waitForStarted(2000)) {
         proc->deleteLater();
-        statusBar()->showMessage("Échec du tunnel : " + profile.name);
+        statusBar()->showMessage(tr("Échec du tunnel : ") + profile.name);
         refreshTray();
     }
 }
@@ -289,7 +289,7 @@ void ShuttleWindow::stopTunnel(const SessionProfile& profile)
 	proc->deleteLater();
 
 	m_tunnels.remove(profile.name);
-	statusBar()->showMessage("Tunnel arrêté : " + profile.name);
+	statusBar()->showMessage(tr("Tunnel arrêté : ") + profile.name);
     refreshTray();
 }
 

@@ -72,7 +72,7 @@ void MonitorBar::setupUi()
     diskIcon->setPixmap(style()->standardIcon(QStyle::SP_DriveHDIcon)
         .pixmap(16, 16));
     layout->addWidget(diskIcon);
-    m_diskLabel = new QLabel("Disques: —", this);
+    m_diskLabel = new QLabel(tr("Disques: —"), this);
     layout->addWidget(m_diskLabel);
 
 	layout->addWidget(makeSeparator());
@@ -126,7 +126,7 @@ void MonitorBar::disconnectSession()
 	s->requestInterruption();
     s->stopMonitor();
     if (!s->wait(5000)) {
-		qWarning() << "MonitorSession ne s'arrête pas aà temps";
+		qWarning() << tr("MonitorSession ne s'arrête pas à temps");
 		s->deleteLater();
 		return;
     }
@@ -136,7 +136,7 @@ void MonitorBar::disconnectSession()
     m_cpuLabel->setText("CPU: —");
     m_ramLabel->setText("RAM: —");
     m_netLabel->setText("↑— ↓—");
-    m_diskLabel->setText("Disques: —");
+    m_diskLabel->setText(tr("Disques: —"));
 }
 
 // -----------------------------------------------------------------

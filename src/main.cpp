@@ -3,6 +3,8 @@
 #include <QIcon>
 
 #include <libssh2.h>
+#include <QTranslator>
+#include <QLocale>
 
 #include "core/AppInitializer.h"
 #include "ui/ShuttleWindow.h"
@@ -25,6 +27,13 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationName("Shuttle");
 
     QApplication a(argc, argv);
+
+    //Translations a voir comment faire
+    QTranslator translator;
+    if (translator.load(":/translations/Asset/translations/shuttle_en.qm")) {
+        a.installTranslator(&translator);
+    }
+
     a.setApplicationName("Shuttle");
     a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/Asset/Icone.png"));
     a.setQuitOnLastWindowClosed(false);

@@ -4,4 +4,8 @@
 		<file>Asset/IconeON.png</file>
 		<file>Asset/Icone.png</file>
 	</qresource>
+	<qresource prefix="/translations">
+		<file>Asset/translations/shuttle_fr.qm</file>
+		<file>Asset/translations/shuttle_en.qm</file>
+	</qresource>
 </RCC>

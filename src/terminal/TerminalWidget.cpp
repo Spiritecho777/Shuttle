@@ -111,7 +111,7 @@ void TerminalWidget::onSessionDisconnected()
 {
     m_session = nullptr;
     // Affiche un message dans le terminal
-    m_parser->feed("\r\n\x1b[33m[Session fermée]\x1b[0m\r\n");
+    m_parser->feed(("\r\n\x1b[33m" + tr("[Session fermée]") + "\x1b[0m\r\n").toUtf8());
     emit sessionClosed();
 }
 
@@ -485,10 +485,10 @@ void TerminalWidget::showContextMenu(const QPoint& pos)
 {
     QMenu menu(this);
 
-    QAction* copyAct = menu.addAction("Copier ");
+    QAction* copyAct = menu.addAction(tr("Copier "));
 	copyAct->setShortcut(QKeySequence("Ctrl+Shift+C"));
 	copyAct->setShortcutVisibleInContextMenu(true);
-    QAction* pasteAct = menu.addAction("Coller");
+    QAction* pasteAct = menu.addAction(tr("Coller"));
 	pasteAct->setShortcut(QKeySequence("Ctrl+Shift+V"));
 	pasteAct->setShortcutVisibleInContextMenu(true);
 

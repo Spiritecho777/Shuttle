@@ -129,6 +129,13 @@ qt_add_resources(${PROJECT_NAME} "resources"
         Asset/IconeON.png
 )
 
+qt_add_resources(${PROJECT_NAME} "translations"
+    PREFIX "/translations"
+    FILES
+        Asset/translations/shuttle_fr.qm
+        Asset/translations/shuttle_en.qm
+)
+
 # -------------------------
 # Ressources Windows (.rc)
 # -------------------------

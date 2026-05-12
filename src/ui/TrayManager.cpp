@@ -9,13 +9,13 @@ TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
 	tray = new QSystemTrayIcon(QIcon(":/icons/Asset/IconeOFF.png"), this);
 	trayMenu = new QMenu();
 
-    menuConnect = trayMenu->addMenu("Connexion");
-    menuDisconnect = trayMenu->addMenu("Déconnexion");
+    menuConnect = trayMenu->addMenu(tr("Connexion"));
+    menuDisconnect = trayMenu->addMenu(tr("Déconnexion"));
     
     trayMenu->addSeparator();
 
-	QAction* actionShow = trayMenu->addAction("Ouvrir");
-	QAction* actionQuit = trayMenu->addAction("Quitter");
+	QAction* actionShow = trayMenu->addAction(tr("Ouvrir"));
+	QAction* actionQuit = trayMenu->addAction(tr("Quitter"));
 
     tray->setContextMenu(trayMenu);
 

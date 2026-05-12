@@ -310,7 +310,7 @@ bool MonitorSession::initSocket()
 #else
     if (m_sock < 0) {
 #endif
-        emit connectionFailed("Monitor : impossible de créer le socket");
+        emit connectionFailed(tr("Monitor : impossible de créer le socket"));
         return false;
     }
 
@@ -323,14 +323,14 @@ bool MonitorSession::initSocket()
 #else
     if (inet_pton(AF_INET, m_profile.host.toUtf8().constData(), &sin.sin_addr) != 1) {
 #endif
-        emit connectionFailed("Monitor : adresse IP invalide");
+        emit connectionFailed(tr("Monitor : adresse IP invalide"));
         return false;
     }
 
     if (::connect(m_sock, reinterpret_cast<sockaddr*>(&sin), sizeof(sin)) != 0) {
         QMetaObject::invokeMethod(this, "connectionFailed",
             Qt::QueuedConnection,
-            Q_ARG(QString, "Monitor : connexion refusée"));
+            Q_ARG(QString, tr("Monitor : connexion refusée")));
         return false;
     }
 
@@ -341,14 +341,14 @@ bool MonitorSession::initSsh()
 {
     m_session = libssh2_session_init();
     if (!m_session) {
-        emit connectionFailed("Monitor : impossible d'initialiser SSH");
+        emit connectionFailed(tr("Monitor : impossible d'initialiser SSH"));
         return false;
     }
 
     libssh2_session_set_blocking(m_session, 1);
 
     if (libssh2_session_handshake(m_session, m_sock) != 0) {
-        emit connectionFailed("Monitor : handshake SSH échoué");
+        emit connectionFailed(tr("Monitor : handshake SSH échoué"));
         return false;
     }
 
@@ -375,7 +375,7 @@ bool MonitorSession::initSsh()
     if (rc != 0) {
         char* errmsg = nullptr;
         libssh2_session_last_error(m_session, &errmsg, nullptr, 0);
-        emit connectionFailed(QString("Monitor : auth échouée : %1").arg(errmsg));
+        emit connectionFailed(QString(tr("Monitor : auth échouée : %1")).arg(errmsg));
         return false;
     }
 

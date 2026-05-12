@@ -65,14 +65,14 @@ void ProfileListWidget::showContextMenu(const QPoint& pos)
     bool canStartTunnel = hasTunnel && hasKey;
 
     if (main && main->isTunnelConnected(p.name)) {
-        contextMenu.addAction("Fermer le tunnel SSH", [this, p]() {
+        contextMenu.addAction(tr("Fermer le tunnel SSH"), [this, p]() {
             int idx = store->profiles().indexOf(p);
             if (idx >= 0)
                 emit tunnelStopRequested(store->profiles().at(idx));
             });
     }
     else {
-        QAction* action = contextMenu.addAction("Monter le tunnel SSH", [this, p]() {
+        QAction* action = contextMenu.addAction(tr("Monter le tunnel SSH"), [this, p]() {
             int idx = store->profiles().indexOf(p);
             if (idx >= 0) {
                 emit tunnelStartRequested(store->profiles().at(idx));
@@ -83,19 +83,19 @@ void ProfileListWidget::showContextMenu(const QPoint& pos)
             action->setEnabled(false);
     }
 
-    contextMenu.addAction("Ouvrir", [this, p]() {
+    contextMenu.addAction(tr("Ouvrir"), [this, p]() {
         int idx = store->profiles().indexOf(p);
         if (idx >= 0)
             emit profileSelected(store->profiles().at(idx));
         });
 
-    contextMenu.addAction("Modifier", [this, p]() {
+    contextMenu.addAction(tr("Modifier"), [this, p]() {
         int idx = store->profiles().indexOf(p);
         if (idx >= 0)
             emit profileEditRequested(store->profiles().at(idx), idx);
         });
 
-    contextMenu.addAction("Supprimer", [this, p]() {
+    contextMenu.addAction(tr("Supprimer"), [this, p]() {
         int idx = store->profiles().indexOf(p);
         if (idx >= 0)
             emit profileDeletedRequested(idx);
