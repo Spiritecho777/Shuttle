@@ -2,6 +2,7 @@
 #include "tab/HomeTab.h"
 #include "ProfileListWidget.h"
 #include "../ssh/SessionProfile.h"
+#include "../core/TranslationManager.h"
 
 #include <QDockWidget>
 #include <QMenuBar>
@@ -10,12 +11,43 @@
 #include <QDebug>
 #include <QProcess>
 #include <QFile>
+#include <QActionGroup>
 
 ShuttleWindow::ShuttleWindow(QWidget* parent)
     : QMainWindow(parent)
 {
 	this->setWindowTitle("Shuttle");
     this->resize(1020, 700);
+
+    // --- Menu ---
+    langMenu = menuBar()->addMenu(tr("Langue"));
+
+    QActionGroup* langGroup = new QActionGroup(this);
+    langGroup->setExclusive(true);
+
+    QAction* actFr = langMenu->addAction("Français");
+    QAction* actEn = langMenu->addAction("English");
+    QAction* actBz = langMenu->addAction("Brezhoneg");
+    QAction* actJa = langMenu->addAction("日本語");
+
+    actFr->setCheckable(true);
+    actEn->setCheckable(true);
+	actBz->setCheckable(true);
+	actJa->setCheckable(true);
+
+    langGroup->addAction(actFr);
+    langGroup->addAction(actEn);
+	langGroup->addAction(actBz);
+	langGroup->addAction(actJa);
+
+    connect(actFr, &QAction::triggered, this, [this]() { setLanguage("fr"); });
+    connect(actEn, &QAction::triggered, this, [this]() { setLanguage("en"); });
+    connect(actBz, &QAction::triggered, this, [this]() { setLanguage("bz"); });
+    connect(actJa, &QAction::triggered, this, [this]() { setLanguage("ja"); });
+
+    connect(&TranslationManager::instance(), &TranslationManager::languageChanged,
+        this, &ShuttleWindow::retranslateUi);
+
     // --- Zone centrale ---
     tabs = new QTabWidget(this);
     tabs->setTabsClosable(true);
@@ -303,3 +335,22 @@ void ShuttleWindow::refreshTray()
 	}
 	m_tray->refreshTunnelMenus(tunnels);
 }
+
+// Langue
+void ShuttleWindow::setLanguage(const QString& lang)
+{
+    TranslationManager::instance().setLanguage(lang);
+}
+
+void ShuttleWindow::retranslateUi()
+{
+    profileDock->setWindowTitle(tr("Profils SSH"));
+    tabs->setTabText(0, tr("Accueil"));
+
+    langMenu->setTitle(tr("Langue"));
+
+    homeTab->retranslate();
+    m_tray->retranslate();
+    m_monitorBar->retranslate();
+}
+

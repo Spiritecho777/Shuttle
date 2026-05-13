@@ -7,5 +7,7 @@
 	<qresource prefix="/translations">
 		<file>Asset/translations/shuttle_fr.qm</file>
 		<file>Asset/translations/shuttle_en.qm</file>
+		<file>Asset/translations/shuttle_bz.qm</file>
+		<file>Asset/translations/shuttle_ja.qm</file>
 	</qresource>
 </RCC>

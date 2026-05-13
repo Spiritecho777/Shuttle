@@ -15,7 +15,7 @@ function Generates {
 
 	$PathTranslate = "$PSScriptRoot/Asset/translations"
 
-	lupdate . -ts "$PathTranslate/shuttle_fr.ts" "$PathTranslate/shuttle_en.ts" "$PathTranslate/shuttle_jp.ts" "$PathTranslate/shuttle_bz.ts"
+	lupdate . -ts "$PathTranslate/shuttle_fr.ts" "$PathTranslate/shuttle_en.ts" "$PathTranslate/shuttle_ja.ts" "$PathTranslate/shuttle_bz.ts"
 }
 
 function Translates {
@@ -26,7 +26,7 @@ function Translates {
 	
 	$PathTranslate = "$PSScriptRoot/Asset/translations"
 
-	lrelease "$PathTranslate/shuttle_fr.ts" "$PathTranslate/shuttle_en.ts" "$PathTranslate/shuttle_jp.ts" "$PathTranslate/shuttle_bz.ts"
+	lrelease "$PathTranslate/shuttle_fr.ts" "$PathTranslate/shuttle_en.ts" "$PathTranslate/shuttle_ja.ts" "$PathTranslate/shuttle_bz.ts"
 }
 
 switch ($Target) {

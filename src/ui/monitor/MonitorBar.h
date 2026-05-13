@@ -19,6 +19,7 @@ public:
 
     void connectTo(const SessionProfile& profile);
     void disconnectSession();
+	void retranslate();
 
 private slots:
     void onDataUpdated(const MonitorData& data);

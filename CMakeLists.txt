@@ -134,6 +134,8 @@ qt_add_resources(${PROJECT_NAME} "translations"
     FILES
         Asset/translations/shuttle_fr.qm
         Asset/translations/shuttle_en.qm
+        Asset/translations/shuttle_bz.qm
+        Asset/translations/shuttle_ja.qm
 )
 
 # -------------------------

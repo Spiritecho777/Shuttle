@@ -3,12 +3,11 @@
 #include <QIcon>
 
 #include <libssh2.h>
-#include <QTranslator>
-#include <QLocale>
 
 #include "core/AppInitializer.h"
 #include "ui/ShuttleWindow.h"
 #include "ui/TrayManager.h"
+#include "core/TranslationManager.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -28,15 +27,18 @@ int main(int argc, char* argv[])
 
     QApplication a(argc, argv);
 
+    // Charge la langue de base
+    TranslationManager::instance().setLanguage("en");
+
     //Translations a voir comment faire
-    QTranslator translator;
+    /*QTranslator translator;
     if (translator.load(":/translations/Asset/translations/shuttle_en.qm")) {
         a.installTranslator(&translator);
     }
 
     a.setApplicationName("Shuttle");
     a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/Asset/Icone.png"));
-    a.setQuitOnLastWindowClosed(false);
+    a.setQuitOnLastWindowClosed(false);*/
 
     if (!AppInitializer::init())
         return 0;

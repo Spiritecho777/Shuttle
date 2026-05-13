@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QLabel>
 
 class QPushButton;
 class QListWidget;
@@ -12,6 +13,8 @@ class HomeTab : public QWidget
 public:
 	explicit HomeTab(QWidget* parent = nullptr);
 
+	void retranslate();
+
 signals:
 	void newSessionRequested();
 
@@ -20,4 +23,5 @@ private slots:
 
 private:
 	QPushButton* newSessionButton;
+	QLabel* welcomeLabel;
 };

@@ -44,6 +44,7 @@ private slots:
 	void stopTunnel(const SessionProfile& profile);
 
 private:
+	QMenu* langMenu;
 	QTabWidget* tabs;
 	QDockWidget* profileDock;
 	QDockWidget* sftpDock;
@@ -58,4 +59,6 @@ private:
 	TrayManager* m_tray = nullptr;
 
 	void refreshTray();
+	void setLanguage(const QString& lang);
+	void retranslateUi();
 };

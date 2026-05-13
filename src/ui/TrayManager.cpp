@@ -1,5 +1,6 @@
 #include "TrayManager.h"
 #include "ShuttleWindow.h"
+#include "../core/TranslationManager.h"
 
 #include <QAction>
 #include <QApplication>
@@ -14,8 +15,8 @@ TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
     
     trayMenu->addSeparator();
 
-	QAction* actionShow = trayMenu->addAction(tr("Ouvrir"));
-	QAction* actionQuit = trayMenu->addAction(tr("Quitter"));
+	actionShow = trayMenu->addAction(tr("Ouvrir"));
+	actionQuit = trayMenu->addAction(tr("Quitter"));
 
     tray->setContextMenu(trayMenu);
 
@@ -36,6 +37,9 @@ TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
     });
 
     tray->show();
+
+    connect(&TranslationManager::instance(), &TranslationManager::languageChanged,
+        this, &TrayManager::retranslate);
 }
 
 void TrayManager::refreshTunnelMenus(const QList<QPair<QString, bool>>& tunnels)
@@ -91,4 +95,12 @@ void TrayManager::updateIcon(TunnelState state)
         tray->setIcon(QIcon(":/icons/Asset/Icone.png"));
         break;
     }
+}
+
+void TrayManager::retranslate()
+{
+    menuConnect->setTitle(tr("Connexion"));
+    menuDisconnect->setTitle(tr("Déconnexion"));
+	actionShow->setText(tr("Ouvrir"));
+    actionQuit->setText(tr("Quitter"));
 }

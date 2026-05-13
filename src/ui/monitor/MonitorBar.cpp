@@ -1,4 +1,5 @@
 #include "MonitorBar.h"
+#include "../../core/TranslationManager.h"
 
 #include <QApplication>
 #include <QStyle>
@@ -8,6 +9,9 @@ MonitorBar::MonitorBar(QWidget* parent)
 {
     setupUi();
     setFixedHeight(24);
+
+    connect(&TranslationManager::instance(), &TranslationManager::languageChanged,
+        this, &MonitorBar::retranslate);
 }
 
 MonitorBar::~MonitorBar()
@@ -203,4 +207,10 @@ QString MonitorBar::formatBytes(float bytesPerSec) const
     if (bytesPerSec < 1024 * 1024)
         return QString("%1 KB/s").arg(bytesPerSec / 1024.0f, 0, 'f', 1);
     return QString("%1 MB/s").arg(bytesPerSec / 1024.0f / 1024.0f, 0, 'f', 2);
+}
+
+void MonitorBar::retranslate()
+{
+    // Seule la partie "Disques" contient du texte statique
+    m_diskLabel->setText(tr("Disques: —"));
 }

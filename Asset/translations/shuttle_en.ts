@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
-
 <context>
     <name>HomeTab</name>
     <message>
         <location filename="../../src/ui/tab/HomeTab.cpp" line="10"/>
+        <location filename="../../src/ui/tab/HomeTab.cpp" line="26"/>
         <source>Bienvenue dans Shuttle !</source>
         <translation>Welcome to Shuttle!</translation>
     </message>
     <message>
         <location filename="../../src/ui/tab/HomeTab.cpp" line="13"/>
+        <location filename="../../src/ui/tab/HomeTab.cpp" line="27"/>
         <source>Nouvelle session</source>
         <translation>New session</translation>
     </message>
@@ -21,8 +22,9 @@
     <message>
         <location filename="../../src/ui/monitor/MonitorBar.cpp" line="75"/>
         <location filename="../../src/ui/monitor/MonitorBar.cpp" line="139"/>
+        <location filename="../../src/ui/monitor/MonitorBar.cpp" line="211"/>
         <source>Disques: —</source>
-        <translation>Drives: —</translation>
+        <translation>Disks: —</translation>
     </message>
     <message>
         <location filename="../../src/ui/monitor/MonitorBar.cpp" line="129"/>
@@ -124,6 +126,9 @@
     </message>
     <message>
         <location filename="../../src/ui/NewSessionDialog.cpp" line="81"/>
+        <location filename="../../src/ui/NewSessionDialog.cpp" line="86"/>
+        <location filename="../../src/ui/NewSessionDialog.cpp" line="97"/>
+        <location filename="../../src/ui/NewSessionDialog.cpp" line="102"/>
         <source>Erreur</source>
         <translation>Error</translation>
     </message>
@@ -173,6 +178,7 @@
         <translation>Save</translation>
     </message>
 </context>
+
 <context>
     <name>ProfileListWidget</name>
     <message>
@@ -413,6 +419,7 @@ Your SSH profiles must be recreated.</translation>
         <translation>Folder created: %1</translation>
     </message>
 </context>
+
 <context>
     <name>SftpWidget</name>
     <message>
@@ -565,41 +572,65 @@ Your SSH profiles must be recreated.</translation>
 <context>
     <name>ShuttleWindow</name>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="26"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="24"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="356"/>
+        <source>Langue</source>
+        <translation>Language</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="56"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="354"/>
         <source>Accueil</source>
         <translation>Home</translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="33"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="63"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="353"/>
         <source>Profils SSH</source>
         <translation>SSH Profiles</translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="122"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="152"/>
         <source> [fermé]</source>
         <translation> [closed]</translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="134"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="164"/>
         <source>Connecté : </source>
         <translation>Connected: </translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="137"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="167"/>
         <source>Erreur : </source>
         <translation>Error: </translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="260"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="290"/>
         <source>Tunnel démarré : </source>
         <translation>Tunnel started: </translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="267"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="297"/>
         <source>Tunnel fermé : </source>
         <translation>Tunnel closed: </translation>
     </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="298"/>
+        <source>Tunnel perdu : </source>
+        <translation>Tunnel lost: </translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="307"/>
+        <source>Échec du tunnel : </source>
+        <translation>Tunnel failure: </translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="322"/>
+        <source>Tunnel arrêté : </source>
+        <translation>Tunnel stopped: </translation>
+    </message>
 </context>
+
 <context>
     <name>TerminalWidget</name>
     <message>
@@ -618,27 +649,33 @@ Your SSH profiles must be recreated.</translation>
         <translation>Paste</translation>
     </message>
 </context>
+
 <context>
     <name>TrayManager</name>
     <message>
         <location filename="../../src/ui/TrayManager.cpp" line="12"/>
+        <location filename="../../src/ui/TrayManager.cpp" line="98"/>
         <source>Connexion</source>
         <translation>Connect</translation>
     </message>
     <message>
         <location filename="../../src/ui/TrayManager.cpp" line="13"/>
+        <location filename="../../src/ui/TrayManager.cpp" line="99"/>
         <source>Déconnexion</source>
         <translation>Disconnect</translation>
     </message>
     <message>
         <location filename="../../src/ui/TrayManager.cpp" line="17"/>
+        <location filename="../../src/ui/TrayManager.cpp" line="100"/>
         <source>Ouvrir</source>
         <translation>Open</translation>
     </message>
     <message>
         <location filename="../../src/ui/TrayManager.cpp" line="18"/>
+        <location filename="../../src/ui/TrayManager.cpp" line="101"/>
         <source>Quitter</source>
         <translation>Quit</translation>
     </message>
 </context>
 </TS>
+
