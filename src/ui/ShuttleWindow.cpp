@@ -223,7 +223,7 @@ void ShuttleWindow::closeTab(int index)
         terminal->detachSession();
         if (s) {
             s->disconnectSession();
-            s->wait(2000);
+            s->wait(5000);
             s->deleteLater();
         }
     }

@@ -28,17 +28,7 @@ int main(int argc, char* argv[])
     QApplication a(argc, argv);
 
     // Charge la langue de base
-    TranslationManager::instance().setLanguage("en");
-
-    //Translations a voir comment faire
-    /*QTranslator translator;
-    if (translator.load(":/translations/Asset/translations/shuttle_en.qm")) {
-        a.installTranslator(&translator);
-    }
-
-    a.setApplicationName("Shuttle");
-    a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/Asset/Icone.png"));
-    a.setQuitOnLastWindowClosed(false);*/
+    TranslationManager::instance().loadSavedLanguage();
 
     if (!AppInitializer::init())
         return 0;

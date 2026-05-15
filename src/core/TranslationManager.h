@@ -1,6 +1,7 @@
 #pragma once
 #include <QObject>
 #include <QTranslator>
+#include <QSettings>
 
 class TranslationManager : public QObject {
     Q_OBJECT
@@ -8,6 +9,8 @@ class TranslationManager : public QObject {
 public:
     static TranslationManager& instance();
     void setLanguage(const QString& lang);
+    QString currentLanguage() const;
+    void loadSavedLanguage();
 
 signals:
     void languageChanged();
@@ -15,4 +18,6 @@ signals:
 private:
     TranslationManager() = default;
     QTranslator m_translator;
+	QSettings m_settings;
+	QString m_currentLanguage;
 };
