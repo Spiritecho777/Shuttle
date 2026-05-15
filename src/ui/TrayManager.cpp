@@ -26,7 +26,7 @@ TrayManager::TrayManager(ShuttleWindow* main, QObject* parent) : QObject(parent)
         main->activateWindow();
     });
 
-    connect(actionQuit, &QAction::triggered, qApp, &QApplication::quit);
+    connect(actionQuit, &QAction::triggered, [main]() { main->close();  qApp->quit(); });
 
     QObject::connect(tray, &QSystemTrayIcon::activated, [main](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::DoubleClick) {

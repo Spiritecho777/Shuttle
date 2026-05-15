@@ -61,4 +61,5 @@ private:
 	void refreshTray();
 	void setLanguage(const QString& lang);
 	void retranslateUi();
+	void closeEvent(QCloseEvent* event) override;
 };

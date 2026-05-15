@@ -12,6 +12,7 @@
 #include <QProcess>
 #include <QFile>
 #include <QActionGroup>
+#include <QCloseEvent>
 
 ShuttleWindow::ShuttleWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -354,3 +355,13 @@ void ShuttleWindow::retranslateUi()
     m_monitorBar->retranslate();
 }
 
+void ShuttleWindow::closeEvent(QCloseEvent* event)
+{
+    if (m_tray) {
+        this->hide();
+        event->ignore();  // Ignore la fermeture, cache juste la fenêtre
+    }
+    else {
+        event->accept();  // Sinon ferme vraiment
+    }
+}
