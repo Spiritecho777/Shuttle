@@ -46,6 +46,11 @@ TerminalWidget::TerminalWidget(QWidget* parent)
         connect(m_blinkTimer, &QTimer::timeout, this, &TerminalWidget::blinkCursor);
         m_blinkTimer->start();
 
+        // Timer de reconnexion (usage unique, démarré à la demande)
+        m_reconnectTimer = new QTimer(this);
+        m_reconnectTimer->setSingleShot(true);
+        connect(m_reconnectTimer, &QTimer::timeout, this, &TerminalWidget::attemptReconnect);
+
         // Focus clavier
         setFocusPolicy(Qt::StrongFocus);
         setAttribute(Qt::WA_InputMethodEnabled, false);
@@ -109,10 +114,122 @@ void TerminalWidget::onDataReceived(const QByteArray& data)
 
 void TerminalWidget::onSessionDisconnected()
 {
+	SSHSession* oldSession = m_session;
     m_session = nullptr;
-    // Affiche un message dans le terminal
-    m_parser->feed(("\r\n\x1b[33m" + tr("[Session fermée]") + "\x1b[0m\r\n").toUtf8());
-    emit sessionClosed();
+
+    // Déconnexion propre : l'utilisateur a tapé exit ou logout
+    if (oldSession && oldSession->isCleanExit()) {
+        m_parser->feed("\r\n\x1b[33m[" + (tr("Déconnecté.") + "]\x1b[0m\r\n").toUtf8());
+        emit sessionClosed();
+        return;
+    }
+
+    if (m_reconnectState == ReconnectState::Idle ||
+        m_reconnectState == ReconnectState::Reconnecting)
+    {
+        // Vérifie qu'on a un profil valide pour reconnecter
+        if (m_profile.host.isEmpty()) {
+            // Pas de profil — comportement classique
+            m_parser->feed(("\r\n\x1b[33m[" + tr("Session fermée") + "]\x1b[0m\r\n").toUtf8());
+            emit sessionClosed();
+            return;
+        }
+
+        m_reconnectState = ReconnectState::Disconnected;
+        m_reconnectAttempt = 0;
+
+        printReconnectMessage(tr("Connexion perdue. Reconnexion automatique..."));
+        startReconnectTimer();
+    }
+}
+
+// -----------------------------------------------------------------
+// Reconnexion automatique
+// -----------------------------------------------------------------
+
+int TerminalWidget::reconnectDelay() const
+{
+    // Backoff progressif : 3s, 5s, 10s, puis 30s ensuite
+    static const int delays[] = { 3000, 5000, 10000, 30000 };
+    int idx = qMin(m_reconnectAttempt, 3);
+    return delays[idx];
+}
+
+void TerminalWidget::startReconnectTimer()
+{
+    int delay = reconnectDelay();
+    int secs = delay / 1000;
+    printReconnectMessage(
+        tr("Tentative %1/%2 dans %3 s...")
+        .arg(m_reconnectAttempt + 1)
+        .arg(kMaxReconnectAttempts)
+        .arg(secs));
+    m_reconnectTimer->start(delay);
+}
+
+void TerminalWidget::printReconnectMessage(const QString& msg)
+{
+    m_parser->feed(("\r\n\x1b[33m" + msg + "\x1b[0m\r\n").toUtf8());
+}
+
+void TerminalWidget::attemptReconnect()
+{
+    if (m_profile.host.isEmpty()) {
+        m_reconnectState = ReconnectState::Failed;
+        printReconnectMessage(tr("Impossible de reconnecter : aucun profil."));
+        emit sessionClosed();
+        return;
+    }
+
+    m_reconnectAttempt++;
+    m_reconnectState = ReconnectState::Reconnecting;
+    emit reconnectStateChanged(m_reconnectState, m_reconnectAttempt, kMaxReconnectAttempts);
+
+    printReconnectMessage(tr("Tentative de reconnexion %1/%2...")
+        .arg(m_reconnectAttempt)
+        .arg(kMaxReconnectAttempts));
+
+    // Recrée une SSHSession identique à l'originale, à partir du profil sauvegardé.
+    SSHSession* newSession = new SSHSession(
+        m_profile.host,
+        m_profile.port,
+        m_profile.username,
+        m_profile.password,
+        m_profile.privateKeyPath,
+        m_profile.portTunnel,
+        m_profile.passphrase,
+        this
+    );
+    newSession->setAuthMethod(m_profile.authMethod);
+
+    // Succès : on rattache proprement la nouvelle session
+    connect(newSession, &SSHSession::connected, this, [this, newSession]() {
+        m_reconnectState = ReconnectState::Idle;
+        m_reconnectAttempt = 0;
+        printReconnectMessage(tr("Reconnecté avec succès !"));
+        attachSession(newSession);
+        m_session->resizePty(m_cols, m_rows);
+        emit reconnectStateChanged(m_reconnectState, 0, kMaxReconnectAttempts);
+        emit reconnected();   // notifie le SftpWidget de se reconnecter aussi
+        });
+
+    // Échec : on planifie la prochaine tentative ou on abandonne
+    connect(newSession, &SSHSession::connectionFailed, this, [this, newSession](const QString& err) {
+        newSession->deleteLater();
+
+        if (m_reconnectAttempt >= kMaxReconnectAttempts) {
+            m_reconnectState = ReconnectState::Failed;
+            printReconnectMessage(tr("Échec après %1 tentatives : %2")
+                .arg(kMaxReconnectAttempts).arg(err));
+            emit reconnectStateChanged(m_reconnectState, m_reconnectAttempt, kMaxReconnectAttempts);
+            emit sessionClosed();
+        }else {
+            startReconnectTimer();
+        }
+        });
+
+    // Lance la connexion (démarre le thread QThread)
+    newSession->start();
 }
 
 // -----------------------------------------------------------------

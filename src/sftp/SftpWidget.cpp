@@ -8,11 +8,16 @@
 #include <QApplication>
 #include <QStyle>
 #include <QFileInfo>
+#include <QTimer>
 
 SftpWidget::SftpWidget(QWidget* parent)
     : QWidget(parent)
 {
     setupUi();
+
+	m_reconnectTimer = new QTimer(this);
+	m_reconnectTimer->setSingleShot(true);
+	connect(m_reconnectTimer, &QTimer::timeout, this, &SftpWidget::attemptReconnect);
 }
 
 SftpWidget::~SftpWidget()
@@ -122,6 +127,8 @@ void SftpWidget::setupUi()
 
 void SftpWidget::connectTo(const SessionProfile& profile)
 {
+	m_profile = profile;
+	m_userDisconnected = false;
     disconnectSession();
 
     m_statusLabel->setText(tr("Connexion SFTP..."));
@@ -144,6 +151,11 @@ void SftpWidget::connectTo(const SessionProfile& profile)
 
 void SftpWidget::disconnectSession()
 {
+    m_userDisconnected = true;   // déco volontaire — pas de reconnexion
+    m_reconnectTimer->stop();
+    m_reconnectState = ReconnectState::Idle;
+    m_reconnectAttempt = 0;
+
     if (!m_session) return;
     SftpSession* s = m_session;
     m_session = nullptr;
@@ -155,6 +167,17 @@ void SftpWidget::disconnectSession()
     m_statusLabel->setText(tr("Non connecté"));
     m_view->setEnabled(false);
     m_pathEdit->setEnabled(false);
+}
+
+void SftpWidget::onSshReconnected()
+{
+    // Le terminal SSH vient de se reconnecter : on relance le SFTP immédiatement
+    // (réinitialise les compteurs comme une connexion fraîche)
+    if (m_userDisconnected || m_profile.host.isEmpty()) return;
+    m_reconnectState = ReconnectState::Idle;
+    m_reconnectAttempt = 0;
+    m_userDisconnected = false;
+    connectTo(m_profile);
 }
 
 // -----------------------------------------------------------------
@@ -189,9 +212,102 @@ void SftpWidget::onConnectionFailed(const QString& error)
 void SftpWidget::onDisconnected()
 {
     m_connected = false;
-    m_statusLabel->setText(tr("Déconnecté"));
     m_view->setEnabled(false);
     m_pathEdit->setEnabled(false);
+
+    // Reconnexion automatique uniquement si ce n'est pas une déco volontaire
+    if (!m_userDisconnected && !m_profile.host.isEmpty()) {
+        m_reconnectState = ReconnectState::Reconnecting;
+        m_reconnectAttempt = 0;
+        m_statusLabel->setText(tr("SFTP déconnecté. Reconnexion..."));
+        startReconnectTimer();
+    } else {
+        m_statusLabel->setText(tr("Déconnecté"));
+    }
+}
+
+// -----------------------------------------------------------------
+// Reconnexion automatique SFTP
+// -----------------------------------------------------------------
+
+int SftpWidget::reconnectDelay() const
+{
+    static const int delays[] = { 3000, 5000, 10000, 30000 };
+    int idx = qMin(m_reconnectAttempt, 3);
+    return delays[idx];
+}
+
+void SftpWidget::startReconnectTimer()
+{
+    int secs = reconnectDelay() / 1000;
+    m_statusLabel->setText(tr("SFTP : reconnexion dans %1 s... (%2/%3)")
+        .arg(secs).arg(m_reconnectAttempt + 1).arg(kMaxReconnectAttempts));
+    m_reconnectTimer->start(reconnectDelay());
+}
+
+void SftpWidget::attemptReconnect()
+{
+    if (m_userDisconnected || m_profile.host.isEmpty()) return;
+
+    m_reconnectAttempt++;
+    m_statusLabel->setText(tr("SFTP : tentative %1/%2...")
+        .arg(m_reconnectAttempt).arg(kMaxReconnectAttempts));
+
+    // Lance une nouvelle session avec le profil sauvegardé
+    // Note : connectTo() réinitialise m_userDisconnected = false,
+    // donc la prochaine déco sera bien de nouveau interceptée.
+    SftpSession* newSession = new SftpSession(m_profile, nullptr);
+
+    connect(newSession, &SftpSession::connected, this, [this, newSession]() {
+        // Succès — on remplace la session
+        m_reconnectState = ReconnectState::Idle;
+        m_reconnectAttempt = 0;
+
+        if (m_session) {
+            m_session->disconnectSession();
+            m_session->wait(3000);
+            delete m_session;
+        }
+        m_session = newSession;
+        m_connected = true;
+
+        // Reconnecte tous les signaux
+        connect(m_session, &SftpSession::disconnected, this, &SftpWidget::onDisconnected);
+        connect(m_session, &SftpSession::dirListed, this, &SftpWidget::onDirListed);
+        connect(m_session, &SftpSession::operationError, this, &SftpWidget::onOperationError);
+        connect(m_session, &SftpSession::operationSuccess, this, &SftpWidget::onOperationSuccess);
+        connect(m_session, &SftpSession::downloadProgress, this, &SftpWidget::onDownloadProgress);
+        connect(m_session, &SftpSession::uploadProgress, this, &SftpWidget::onUploadProgress);
+        connect(m_session, &SftpSession::downloadFinished, this, &SftpWidget::onDownloadFinished);
+        connect(m_session, &SftpSession::uploadFinished, this, &SftpWidget::onUploadFinished);
+        connect(m_session, &SftpSession::homeResolved, this, &SftpWidget::navigateTo);
+
+        m_view->setEnabled(true);
+        m_pathEdit->setEnabled(true);
+        m_statusLabel->setText(tr("SFTP reconnecté !"));
+
+        // Recharge le dossier qu'on était en train de consulter
+        if (!m_currentPath.isEmpty())
+            navigateTo(m_currentPath);
+        else
+            navigateTo("/");
+    });
+
+    connect(newSession, &SftpSession::connectionFailed, this, [this, newSession](const QString& err) {
+        newSession->wait(3000);
+        delete newSession;
+
+        if (m_reconnectAttempt >= kMaxReconnectAttempts) {
+            m_reconnectState = ReconnectState::Failed;
+            m_statusLabel->setText(tr("SFTP : échec après %1 tentatives : %2")
+                .arg(kMaxReconnectAttempts).arg(err));
+            emit statusMessage(tr("SFTP déconnecté définitivement : %1").arg(err));
+        }else {
+            startReconnectTimer();
+        }
+    });
+
+    newSession->start();
 }
 
 void SftpWidget::onDirListed(const QString& path, const QList<SftpEntry>& entries)

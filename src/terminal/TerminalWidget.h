@@ -37,9 +37,19 @@ public:
     void setProfile(const SessionProfile& p);
 	const SessionProfile& profile() const { return m_profile; }
 
+	// Etat de reconnexion automatique 
+	enum class ReconnectState { 
+        Idle,
+		Disconnected,
+        Reconnecting,
+        Failed
+    };
+
 signals:
     void titleChanged(const QString& title);
     void sessionClosed();
+	void reconnectStateChanged(ReconnectState state, int attempt, int maxAttempts);
+	void reconnected();
 
 protected:
     void paintEvent(QPaintEvent* event)     override;
@@ -57,6 +67,7 @@ private slots:
     void onDataReceived(const QByteArray& data);
     void onSessionDisconnected();
     void blinkCursor();
+	void attemptReconnect();
 
 private:
     void recalcGrid();
@@ -96,6 +107,16 @@ private:
 
     //SFTP
 	SessionProfile m_profile;
+
+    // Reconnexion automatique
+    ReconnectState m_reconnectState = ReconnectState::Idle;
+    QTimer* m_reconnectTimer = nullptr;
+    int            m_reconnectAttempt = 0;
+    static const int kMaxReconnectAttempts = 10;
+    // Délais en ms : 3s, 5s, 10s, 30s, 30s, ...
+    int reconnectDelay() const;
+    void startReconnectTimer();
+    void printReconnectMessage(const QString& msg);
 
 	// Sélection de texte
     QPoint m_selStart = { -1, -1 };

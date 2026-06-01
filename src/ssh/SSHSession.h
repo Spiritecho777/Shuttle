@@ -57,4 +57,8 @@ private:
 
 	std::atomic<bool> running{ false };
 	std::atomic<bool> m_disconnecting{ false };
+	std::atomic<bool> m_cleanExit{ false };
+
+public:
+	bool isCleanExit() const { return m_cleanExit.load(std::memory_order_relaxed); }
 };

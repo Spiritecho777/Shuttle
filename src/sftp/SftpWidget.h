@@ -8,6 +8,7 @@
 #include <QProgressBar>
 #include <QVBoxLayout>
 #include <QAction>
+#include <QTimer>
 
 #include "SftpSession.h"
 #include "SftpModel.h"
@@ -24,7 +25,11 @@ public:
     void connectTo(const SessionProfile& profile);
     void disconnectSession();
 
+    void onSshReconnected();
+
     bool isConnected() const { return m_connected; }
+
+    enum class ReconnectState { Idle, Reconnecting, Failed };
 
 signals:
     void statusMessage(const QString& msg);
@@ -53,12 +58,17 @@ private slots:
     void actionNewFolder();
 
     void onContextMenu(const QPoint& pos);
+	void attemptReconnect();
 
 private:
     void setupUi();
     void navigateTo(const QString& path);
     QString selectedPath() const;
     SftpEntry selectedEntry() const;
+
+    int  reconnectDelay() const;
+    void startReconnectTimer();
+    void printStatus(const QString& msg);
 
     // UI
     QToolBar* m_toolbar = nullptr;
@@ -82,4 +92,12 @@ private:
     bool         m_connected = false;
     QString      m_currentPath;
     QList<QString> m_history; // navigation arrière
+
+    // Reconnexion automatique
+    SessionProfile  m_profile;
+    ReconnectState  m_reconnectState = ReconnectState::Idle;
+    QTimer* m_reconnectTimer = nullptr;
+    int             m_reconnectAttempt = 0;
+    bool            m_userDisconnected = false;   // true = l'utilisateur a demandé la déco
+    static const int kMaxReconnectAttempts = 10;
 };

@@ -31,26 +31,28 @@ void SSHSession::disconnectSession()
 
 	running.store(false, std::memory_order_relaxed);
 
-	QMutexLocker lock(&m_mutex);
-	if (channel) {
-		LIBSSH2_CHANNEL* ch = channel;
-		channel = nullptr;
-		libssh2_channel_close(ch);
-		libssh2_channel_free(ch);
-	}
+	{
+		QMutexLocker lock(&m_mutex);
+		if (channel) {
+			LIBSSH2_CHANNEL* ch = channel;
+			channel = nullptr;
+			libssh2_channel_close(ch);
+			libssh2_channel_free(ch);
+		}
 
-	if (session) {
-		LIBSSH2_SESSION* s = session;
-		session = nullptr;
-		libssh2_session_disconnect(s, "Normal Shutdown");
-		libssh2_session_free(s);
-	}
+		if (session) {
+			LIBSSH2_SESSION* s = session;
+			session = nullptr;
+			libssh2_session_disconnect(s, "Normal Shutdown");
+			libssh2_session_free(s);
+		}
 
 #ifdef _WIN32
-	if (sock != INVALID_SOCKET) { closesocket(sock); sock = INVALID_SOCKET; }
+		if (sock != INVALID_SOCKET) { closesocket(sock); sock = INVALID_SOCKET; }
 #else
-	if (sock >= 0) { ::close(sock); sock = -1; }
+		if (sock >= 0) { ::close(sock); sock = -1; }
 #endif
+	}
 
 	emit disconnected();
 }
@@ -66,6 +68,7 @@ void SSHSession::writeData(const QByteArray& data)
 
 void SSHSession::run()
 {
+	m_disconnecting.store(false, std::memory_order_relaxed);
 	running.store(true, std::memory_order_relaxed);
 
 	// --- SOCKET ---
@@ -199,28 +202,44 @@ void SSHSession::run()
 	// --- Boucle de lecture ---
 	char bufferOut[4096];
 	char bufferErr[4096];
+	bool cleanExit = false;   // true = l'utilisateur a tapé exit/logout (EOF propre)
 
 	while (running) {
 		long n, n2;
 		{
 			QMutexLocker lock(&m_mutex);
 			if (!channel) break;
+
+			// EOF = shell fermé proprement (exit, logout, fin de script)
+			if (libssh2_channel_eof(channel)) {
+				cleanExit = true;
+				break;
+			}
+
 			n = libssh2_channel_read(channel, bufferOut, sizeof(bufferOut));
 			n2 = libssh2_channel_read_stderr(channel, bufferErr, sizeof(bufferErr));
-			if (libssh2_channel_eof(channel)) break;
 		}
 
 		if (n == LIBSSH2_ERROR_EAGAIN && n2 == LIBSSH2_ERROR_EAGAIN) {
-			msleep(10);  // ← hors du mutex
+			msleep(10);
 			continue;
 		}
 
-		if (n > 0)  emit dataReceived(QByteArray(bufferOut, static_cast<int>(n)));
+		// Erreur réseau franche (reboot, coupure, timeout…)
+		if ((n < 0 && n != LIBSSH2_ERROR_EAGAIN) ||
+			(n2 < 0 && n2 != LIBSSH2_ERROR_EAGAIN))
+			break;   // cleanExit reste false → reconnexion
+
+		if (n > 0) emit dataReceived(QByteArray(bufferOut, static_cast<int>(n)));
 		if (n2 > 0) emit dataReceived(QByteArray(bufferErr, static_cast<int>(n2)));
 	}
 
+	// Signale au TerminalWidget si c'est une déco propre ou une perte réseau
+	if (cleanExit)
+		m_cleanExit.store(true, std::memory_order_relaxed);
+
 	disconnectSession();
-	}
+}
 
 void SSHSession::resizePty(int cols, int rows)
 {
