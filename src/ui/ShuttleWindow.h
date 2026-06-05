@@ -50,6 +50,7 @@ private:
 	QDockWidget* sftpDock;
 	QString m_currentHost;
 	QMap<QString, QProcess*> m_tunnels;
+	bool isHostReachable(const QString& host, int port, int timeoutMs = 500);
 
 	HomeTab* homeTab;
 	ProfileStore* profileStore;

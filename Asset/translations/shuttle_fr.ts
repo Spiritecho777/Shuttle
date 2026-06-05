@@ -588,60 +588,76 @@ Vos profils SSH doivent être recréés.</source>
 <context>
     <name>ShuttleWindow</name>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="24"/>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="351"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="37"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="393"/>
         <source>Langue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="59"/>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="349"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="72"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="391"/>
         <source>Accueil</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="66"/>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="348"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="79"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="390"/>
         <source>Profils SSH</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="155"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="144"/>
+        <source>Hôte injoignable : </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="145"/>
+        <source>Erreur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="145"/>
+        <source>Impossible de joindre l&apos;hôte %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="174"/>
         <source> [fermé]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="167"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="185"/>
         <source>Connecté : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="170"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="188"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="193"/>
         <source>Erreur : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="293"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="335"/>
         <source>Tunnel démarré : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="300"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="342"/>
         <source>Tunnel fermé : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="301"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="343"/>
         <source>Tunnel perdu : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="310"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="352"/>
         <source>Échec du tunnel : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/ui/ShuttleWindow.cpp" line="325"/>
+        <location filename="../../src/ui/ShuttleWindow.cpp" line="367"/>
         <source>Tunnel arrêté : </source>
         <translation type="unfinished"></translation>
     </message>

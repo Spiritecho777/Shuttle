@@ -14,6 +14,19 @@
 #include <QActionGroup>
 #include <QCloseEvent>
 
+#ifdef _WIN32
+#define _WIN32_WINNT 0x0600
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#endif
+
 ShuttleWindow::ShuttleWindow(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -127,6 +140,12 @@ ShuttleWindow::ShuttleWindow(QWidget* parent)
 // Profil
 void ShuttleWindow::openSession(const SessionProfile& profile)
 {
+    if (!isHostReachable(profile.host, profile.port)) {
+        statusBar()->showMessage(tr("Hôte injoignable : ") + profile.host);
+        QMessageBox::warning(this, tr("Erreur"), tr("Impossible de joindre l'hôte %1").arg(profile.host));
+        return;
+    }
+
     // --- Création session SSH ---
     auto* session = new SSHSession(
         profile.host,
@@ -154,7 +173,6 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
         int i = tabs->indexOf(terminal);
         if (i >= 0) tabs->setTabText(i, tabs->tabText(i) + tr(" [fermé]"));
 
-		//Déconnecte le SFTP si c'était la session active
         if (m_sftpWidget->isConnected()) {
             const SessionProfile& p = terminal->profile();
             if (m_sftpWidget->isConnected())
@@ -162,13 +180,37 @@ void ShuttleWindow::openSession(const SessionProfile& profile)
         }
     });
 
-    // --- Statut ---
+    // --- Statut Connexion réussie---
     connect(session, &SSHSession::connected, this, [this, profile]() {
         statusBar()->showMessage(tr("Connecté : ") + profile.name);
         });
     connect(session, &SSHSession::connectionFailed, this, [this](const QString& err) {
         statusBar()->showMessage(tr("Erreur : ") + err);
         });
+
+    // --- Échec de connexion (IP injoignable, refus, auth…) ---
+    connect(session, &SSHSession::connectionFailed, this, [this, session, terminal](const QString& err) {
+        statusBar()->showMessage(tr("Erreur : ") + err);
+
+        terminal->detachSession();
+
+        int i = tabs->indexOf(terminal);
+        if (i >= 0)
+            tabs->removeTab(i);
+
+        if (tabs->count() <= 1) {
+            sftpDock->hide();
+            m_sftpWidget->disconnectSession();
+            m_monitorBar->disconnectSession();
+            m_currentHost.clear();
+        }
+
+        terminal->deleteLater();
+        session->deleteLater();
+        });
+
+    // --- Reconnexion SSH réussie → relance aussi le SFTP ---
+    connect(terminal, &TerminalWidget::reconnected, m_sftpWidget, &SftpWidget::onSshReconnected);
 
     // --- Attache et lance ---
     terminal->attachSession(session);
@@ -364,4 +406,67 @@ void ShuttleWindow::closeEvent(QCloseEvent* event)
     else {
         event->accept();  // Sinon ferme vraiment
     }
+}
+
+// Connexion
+bool ShuttleWindow::isHostReachable(const QString& host, int port, int timeoutMs)
+{
+#ifdef _WIN32
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock == INVALID_SOCKET) return false;
+#else
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) return false;
+#endif
+
+    sockaddr_in sin{};
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(port);
+
+#ifdef _WIN32
+    if (InetPtonA(AF_INET, host.toUtf8().constData(), &sin.sin_addr) != 1) {
+        closesocket(sock);
+        return false;
+    }
+#else
+    if (inet_pton(AF_INET, host.toUtf8().constData(), &sin.sin_addr) != 1) {
+        close(sock);
+        return false;
+    }
+#endif
+
+#ifdef _WIN32
+    u_long mode = 1;
+	ioctlsocket(sock, FIONBIO, &mode);
+#else
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+#endif
+	
+	int result = ::connect(sock, (sockaddr*)&sin, sizeof(sin));
+    if (result == 0) {
+#ifdef _WIN32
+        closesocket(sock);
+#else
+        close(sock);
+#endif
+        return true;
+    }
+		
+	fd_set wfds;
+    FD_ZERO(&wfds);
+    FD_SET(sock, &wfds);
+
+    timeval tv;
+    tv.tv_sec = timeoutMs / 1000;
+    tv.tv_usec = (timeoutMs % 1000) * 1000;
+
+    result = select(sock + 1, nullptr, &wfds, nullptr, &tv);
+
+#ifdef _WIN32
+    closesocket(sock);
+#else
+    close(sock);
+#endif
+
+    return (result > 0);
 }
