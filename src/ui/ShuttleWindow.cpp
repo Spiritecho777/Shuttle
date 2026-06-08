@@ -430,7 +430,7 @@ bool ShuttleWindow::isHostReachable(const QString& host, int port, int timeoutMs
     }
 #else
     if (inet_pton(AF_INET, host.toUtf8().constData(), &sin.sin_addr) != 1) {
-        close(sock);
+        ::close(sock);
         return false;
     }
 #endif
@@ -447,7 +447,7 @@ bool ShuttleWindow::isHostReachable(const QString& host, int port, int timeoutMs
 #ifdef _WIN32
         closesocket(sock);
 #else
-        close(sock);
+        ::close(sock);
 #endif
         return true;
     }
@@ -465,7 +465,7 @@ bool ShuttleWindow::isHostReachable(const QString& host, int port, int timeoutMs
 #ifdef _WIN32
     closesocket(sock);
 #else
-    close(sock);
+    ::close(sock);
 #endif
 
     return (result > 0);
