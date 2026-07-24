@@ -1,6 +1,6 @@
 # Shuttle
 
-**Modern**SH Workspace for Developers and**ystem Administrators**
+**Modern** SSH Workspace for Developers and**ystem Administrators**
 
 Shuttle is a lightweight, privacy-focused SSH client designed for managing remote Linux servers from a modern desktop interface.
 
